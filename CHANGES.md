@@ -22,3 +22,50 @@
 - v0.27b removed the watchdog's "wake the audio" nudge, so a stall that v0.25b recovered from in about half a
   second stayed silent until the restart banner. v0.28 nudges once, only after the audio clock has been frozen
   for ~1.5 s (so it can't interrupt sound that is still playing).
+
+# LUME v0.29
+
+## Pops between notes
+- Every chord and melody note gets its own resonant filter, and that filter comes alive on the audio thread a
+  few milliseconds after the note's oscillators have started. Its first sample jumped into the middle of a
+  waveform, which made a small pop at each note start. The filter now fades its input in over the first ~6 ms.
+  In recordings of fast legato and staccato playing, every pop is gone.
+- Note releases and the chord duck on right-ribbon strikes now hold the level exactly where it is
+  (`cancelAndHoldAtTime`). Before, they re-read a slightly stale value, which could cause a small jump.
+
+## Ribbon load under hard strumming
+- Ringing ribbon strings are capped (20 at once, or 32 with ?full). Past that, the oldest fades out in 30 ms.
+  In a 16-stroke hard-strum test, peak sounding oscillators dropped from 120 to 50.
+- Vibrato and movement/bend buses are only wired into notes while they carry signal. An oscillator with
+  anything connected to its detune costs Chrome about 2.5-3x as much, even when the bus is silent.
+
+# LUME v0.30 (sound-engine audit)
+
+Measured offline (render speed vs realtime, best of 4, higher is better), v0.27b -> v0.30:
+idle 9.4x -> 21.5x, chord + 6 notes held 5.1x -> 8.8x, 40-string strum 6.1x -> 8.8x.
+
+## Leaks
+- Every note left its per-partial gain nodes wired together after it ended (~576 dead links per
+  play-through, growing all session). Lume's connection count now stays flat: it was 857 -> 1455 over two
+  full feature cycles in v0.29, and is now 256 -> 256.
+- The recorder's tap on the master stayed wired (and processing) after recording stopped. It's now unhooked.
+
+## Always-on work removed
+- Movement LFOs (one per instrument) were wired into their targets even at depth 0, the default. An LFO
+  wired into a filter's frequency makes that filter recompute every sample. They're now only wired in
+  while depth is up.
+
+## Engine efficiency
+- Lume filter: a rational tanh in place of Math.tanh (within ~2%), and the coefficient during cutoff sweeps
+  refreshed every 8 samples instead of every sample.
+- FM (DX7) engine: when the poly limit is hit, the stolen voice fades out over 8 ms instead of being cut
+  mid-waveform.
+
+## Starts dry (v0.30, your call)
+- Defaults are now echo 0, reverb 0, shimmer off and tape hiss 0 on every instrument; effects are opt-in.
+  A one-time migration turns off saved settings that are still exactly the old defaults (echo 35% /
+  reverb 42%, shimmer on, hiss 50%). Anything you set yourself is kept.
+- The shimmer reverb and tape echo now sleep when nothing can feed them (no instrument send up, sparkle off,
+  no drums in the last 8 s, not frozen) and their tail has died away. Turning a send up, a drum hit, sparkle
+  or FREEZE wakes them before any sound reaches them.
+- Measured (offline, best of 3) vs v0.27b: idle 10.2x -> 34.2x, chord + 6 notes 5.5x -> 13.4x realtime.

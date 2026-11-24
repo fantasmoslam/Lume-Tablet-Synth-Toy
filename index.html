@@ -1839,14 +1839,15 @@ const KINDS=['chord','note','plateL','plateR'];
 const ENV0=()=>({on:false,a:.01,d:.4,s:.7,r:.3});   /* on:false = use the voice's own envelope */
 const MOD0=()=>({rate:.3,depth:0,target:'filter',shape:'sine'});   /* depth:0 = off by default, non-intrusive until turned on */
 const FX0=()=>({cut:1,res:.1,drv:0,cho:0,echo:0,rev:0,uni:0,wid:.3,vs:.6,gl:0});                 /* fully dry: used by the Clean preset. uni:0 = unison off (1 voice) */
-const FX_DEF=()=>({cut:1,res:.1,drv:0,cho:0,echo:.35,rev:.42,uni:0,wid:.3,vs:.6,gl:0});   /* v0.18: vs = velocity sensitivity, gl = glide (melody) */           /* starting point: about what the old always-on echo and reverb amounted to. Unison defaults off — it's an opt-in texture, not baked into old presets */
+const FX_DEF=()=>({cut:1,res:.1,drv:0,cho:0,echo:0,rev:0,   /* v0.30: Lume starts dry - effects are opt-in */ uni:0,wid:.3,vs:.6,gl:0});   /* v0.18: vs = velocity sensitivity, gl = glide (melody) */           /* starting point: about what the old always-on echo and reverb amounted to. Unison defaults off — it's an opt-in texture, not baked into old presets */
 const INST=(()=>{const d={};KINDS.forEach(k=>d[k]={oct:0,fx:FX_DEF(),env:ENV0(),mod:MOD0()});
   try{const o=JSON.parse(localStorage.getItem('lyra-inst')||'null');if(o)KINDS.forEach(k=>{if(o[k]){d[k].oct=Math.max(-3,Math.min(3,+o[k].oct||0));Object.assign(d[k].fx,o[k].fx||{});if(o[k].env&&typeof o[k].env==='object')Object.assign(d[k].env,o[k].env);
       if(o[k].mod&&typeof o[k].mod==='object')Object.assign(d[k].mod,o[k].mod);
-      if(!o.v&&!(o[k].fx&&(o[k].fx.echo>0||o[k].fx.rev>0))){d[k].fx.echo=FX_DEF().echo;d[k].fx.rev=FX_DEF().rev}}})}catch(e){}   /* older saves: show the hidden global amount on the sliders */
+      if(!o.v&&!(o[k].fx&&(o[k].fx.echo>0||o[k].fx.rev>0))){d[k].fx.echo=FX_DEF().echo;d[k].fx.rev=FX_DEF().rev}
+      if(!o.dry30&&Math.abs((d[k].fx.echo||0)-0.35)<1e-6&&Math.abs((d[k].fx.rev||0)-0.42)<1e-6){d[k].fx.echo=0;d[k].fx.rev=0}}})}catch(e){}   /* v0.30: old always-on defaults -> dry (once) */   /* older saves: show the hidden global amount on the sliders */
   return d})();
 function instForSave(){const o=JSON.parse(JSON.stringify(INST));try{if(camState.active&&camState.savedFx){o.chord.fx=Object.assign({},camState.savedFx);o.chord.mod.depth=camState.savedModDepth}}catch(e){}return o}   /* audit2: while the theremin is on, save the chord patch as it was before, not the theremin's forced settings */
-let saveInstT=0;function saveInst(){clearTimeout(saveInstT);saveInstT=setTimeout(()=>{try{localStorage.setItem('lyra-inst',JSON.stringify(Object.assign({v:2},instForSave())))}catch(e){}},300)}
+let saveInstT=0;function saveInst(){clearTimeout(saveInstT);saveInstT=setTimeout(()=>{try{localStorage.setItem('lyra-inst',JSON.stringify(Object.assign({v:2,dry30:1},instForSave())))}catch(e){}},300)}
 const octLabel=()=>KINDS.map(k=>(INST[k].oct>0?'+':'')+INST[k].oct).join(' ');
 const knobs={noteVol:0.7,plateL:0.6,plateR:0.6,chordVol:0.7};
 const volCurve=v=>Math.pow(Math.max(0,Math.min(1.3,v)),2.3);
@@ -2232,6 +2233,26 @@ addEventListener('error',e=>{
   if(d)d.textContent='⚠ '+(e.message||'script error').slice(0,64);
 });
 function envFor(inst){const I=inst&&typeof INST!=='undefined'?INST[inst]:null;return I&&I.env&&I.env.on?I.env:null}
+/* v0.29: freeze a gain exactly where it is right now. cancelScheduledValues() drops the ramp in progress, and
+   gain.value is the level from the last audio block, so the old cancel + setValueAtTime(gain.value) let the
+   level jump at the moment of release - a small pop between notes. cancelAndHoldAtTime keeps it continuous. */
+/* v0.29 lazy pitch-mod links. Every oscillator had the vibrato bus and the movement/bend bus wired into its
+   detune, and an oscillator with ANY audio input on detune drops to Chrome's slow per-sample path - measured
+   2.5-3x the cost of a plain oscillator, even when the bus is silent. Each bus is now watched with a tiny
+   analyser: while it's silent (vibrato off, no movement, no bend) its notes aren't wired to it; the moment it
+   carries signal every sounding note is wired back in (within ~50 ms), and it's unwired after ~0.6 s of quiet. */
+const detLinks=new Map();
+function detBus(bus){let L=detLinks.get(bus);if(L)return L;
+  const an=AC.createAnalyser();an.fftSize=32;bus.connect(an);
+  L={live:true,oscs:new Set(),an,buf:new Float32Array(32),quiet:0};detLinks.set(bus,L);return L}
+function detLink(bus,o){if(!bus)return;const L=detBus(bus);L.oscs.add(o);if(L.live)bus.connect(o.detune)}
+function detUnlink(bus,o){if(!bus)return;const L=detLinks.get(bus);if(!L){try{bus.disconnect(o.detune)}catch(e){}return}
+  L.oscs.delete(o);if(L.live){try{bus.disconnect(o.detune)}catch(e){}}}
+setInterval(()=>{if(!AC||document.hidden)return;const now=performance.now();
+  detLinks.forEach((L,bus)=>{L.an.getFloatTimeDomainData(L.buf);let nz=false;for(let i=0;i<32;i++)if(L.buf[i]>1e-7||L.buf[i]<-1e-7){nz=true;break}
+    if(nz){L.quiet=0;if(!L.live){L.live=true;L.oscs.forEach(o=>{try{bus.connect(o.detune)}catch(e){}})}}
+    else if(L.live){if(!L.quiet)L.quiet=now;else if(now-L.quiet>600){L.live=false;L.oscs.forEach(o=>{try{bus.disconnect(o.detune)}catch(e){}})}}})},50);
+function holdGain(p,t){if(p.cancelAndHoldAtTime){p.cancelAndHoldAtTime(t);return}p.cancelScheduledValues(t);p.setValueAtTime(p.value,t)}
 function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
   {const FT=opts&&opts.T&&TIMBRES[opts.T];if(FT&&FT.fm){if(fmReady)return makeFMVoice(FT,midis,busIn,amtGain,level,initialCents,slotLevels,opts);opts=Object.assign({},opts,{T:'Poly'})}}   /* FM patches go to the FM engine (plain voice for the first instant while it loads) */
   const T=TIMBRES[(opts&&opts.T)||'Poly']||TIMBRES.Poly;
@@ -2276,13 +2297,13 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
         const o=AC.createOscillator();o.type=type;o.frequency.value=freq(m)*mul;
         o._mul=mul;o._base=det+uOff;
         const og=AC.createGain();og.gain.value=g/Math.sqrt(midis.length*uniN);
-        o.connect(og);og.connect(sg);
-        amtGain.connect(o.detune);
-        if(opts&&opts.mod)opts.mod.connect(o.detune);
+        o.connect(og);og.connect(sg);o._og=og;
+        detLink(amtGain,o);
+        if(opts&&opts.mod)detLink(opts.mod,o);
         o.start(t);oscs.push(o);
       }
     }
-    slots.push({oscs,
+    slots.push({oscs,sg,
       setLevel(l){sg.gain.setTargetAtTime(l,AC.currentTime,0.05)},
       setMidi(mm){const ff=freq(mm);oscs.forEach(o=>o.frequency.setTargetAtTime(ff*o._mul,AC.currentTime,0.02))},
       glide(c){oscs.forEach(o=>o.detune.setTargetAtTime(c+o._base,AC.currentTime,0.03))}});
@@ -2290,19 +2311,18 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
   const nOsc=slots.reduce((n,s)=>n+s.oscs.length,0);
   const v={slots,amp,filt,dead:false,gone:false,protected:!!(opts&&opts.protect),
     kill(){if(v.gone)return;v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc;const t=AC.currentTime;   /* v0.28: fast fade for the tail cap */
-      amp.gain.cancelScheduledValues(t);amp.gain.setValueAtTime(amp.gain.value,t);amp.gain.linearRampToValueAtTime(0,t+0.03);
+      holdGain(amp.gain,t);amp.gain.linearRampToValueAtTime(0,t+0.03);
       slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop(t+0.04)}catch(e){}}))},
     glide(c){slots.forEach(s=>s.glide(c))},
     release(fast){if(v.dead)return;v.dead=true;const t=AC.currentTime;const rr=fast||REL;
-      amp.gain.cancelScheduledValues(t);
-      amp.gain.setValueAtTime(Math.max(amp.gain.value,0.0001),t);
-      amp.gain.exponentialRampToValueAtTime(0.0001,t+rr);
+      holdGain(amp.gain,t);
+      amp.gain.setTargetAtTime(0,t,rr/9.2);   /* same curve as the old exponential ramp to -80 dB over rr, but it starts from wherever the level really is */
       slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop(t+rr+0.05)}catch(e){}}))   /* audio-clock stop: silent CPU ends on time even if the cleanup timer below is throttled */
       setTimeout(()=>{if(!v.gone){v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc}
         /* also unhook each oscillator from the shared vibrato/modulation buses -- those links used to stay forever */
-        slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop()}catch(e){}try{amtGain.disconnect(o.detune)}catch(e){}
-          if(opts&&opts.mod){try{opts.mod.disconnect(o.detune)}catch(e){}}try{o.disconnect()}catch(e){}}));
-        amp.disconnect();filt.disconnect()},rr*1000+200)}};
+        slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop()}catch(e){}detUnlink(amtGain,o);
+          if(opts&&opts.mod)detUnlink(opts.mod,o);try{o.disconnect()}catch(e){}try{o._og.disconnect()}catch(e){}}));   /* v0.30: the per-partial gains were never unhooked (~576 leaked links per play-through) */
+        slots.forEach(s=>{try{s.sg.disconnect()}catch(e){}});amp.disconnect();filt.disconnect();},rr*1000+200)}};
   const peak=level/Math.sqrt(midis.length);
   amp.gain.setValueAtTime(0,t);
   amp.gain.linearRampToValueAtTime(peak,t+ATK);
@@ -2349,6 +2369,7 @@ function rackWire(r,part,on){
     if(part==='sd'){if(on)r.mix.connect(r.sd);else r.mix.disconnect(r.sd)}
     if(part==='sr'){if(on)r.mix.connect(r.sr);else r.mix.disconnect(r.sr)}
   }catch(e){}
+  if(on&&(part==='sr'||part==='sd')&&typeof fxSleepCheck==='function')fxSleepCheck();   /* v0.30: wake a sleeping reverb/echo */
 }
 /* A proper audio-fader taper: real mixing-desk sends and gain controls are laid out so that equal
    steps of the control give roughly equal steps in perceived loudness (dB), not equal steps in raw
@@ -2430,20 +2451,27 @@ function scheduleDrift(m){
                     stale timeout finally fires */
   step();
 }
+/* v0.30: Movement is off (depth 0) by default, but every instrument's LFO was still wired into its target - and an
+   LFO wired into a filter's frequency forces that filter to recompute its coefficients every sample. All four
+   Movement LFOs ran for nothing all session (measured ~25% of idle audio work). The LFO is now only wired in while
+   its depth is up; unwired, it sits on an island the browser doesn't process at all. */
 function retargetMod(k){
   const m=mods[k];if(!m)return;
-  if(m.scaleNode){try{m.scaleNode.disconnect()}catch(e){}}
+  clearTimeout(m.unwireT);if(m.scaleNode&&m.wired){try{m.scaleNode.disconnect()}catch(e){}try{m.out.disconnect(m.scaleNode)}catch(e){}}
   const target=INST[k].mod.target,scale=AC.createGain();
   scale.gain.value=target==='filter'?filterModRangeHz(k):(MOD_TARGET_SCALE[target]||0);
-  m.out.connect(scale);m.scaleNode=scale;
+  m.scaleNode=scale;m.wired=false;m.wireTarget=null;
   const r=racks[k];
-  if(target==='filter'&&r)scale.connect(r.filt.frequency);
-  else if(target==='pan'&&r)scale.connect(r.pan.pan);
-  else if(target==='pitch'){
-    const bus=k.startsWith('plate')?plateMod[sideOf(k)]:modMix[k];
-    if(bus)scale.connect(bus);
-  }
+  if(target==='filter'&&r)m.wireTarget=r.filt.frequency;
+  else if(target==='pan'&&r)m.wireTarget=r.pan.pan;
+  else if(target==='pitch')m.wireTarget=(k.startsWith('plate')?plateMod[sideOf(k)]:modMix[k])||null;
+  modWire(k);
 }
+function modWire(k){const m=mods[k];if(!m||!m.scaleNode||!m.wireTarget)return;
+  const want=(INST[k].mod.depth||0)>0.001;clearTimeout(m.unwireT);
+  if(want&&!m.wired){m.out.connect(m.scaleNode);m.scaleNode.connect(m.wireTarget);m.wired=true}
+  else if(!want&&m.wired)m.unwireT=setTimeout(()=>{if((INST[k].mod.depth||0)>0.001||!m.wired)return;
+    try{m.out.disconnect(m.scaleNode)}catch(e){}try{m.scaleNode.disconnect()}catch(e){}m.wired=false},800)}   /* after the depth fade */
 function applyMod(k){
   const m=mods[k];if(!m||!AC)return;const mo=INST[k].mod,t=AC.currentTime;
   m.lfo.frequency.setTargetAtTime(modHz(k),t,0.3);
@@ -2454,6 +2482,7 @@ function applyMod(k){
      a moderate setting already produces a clearly audible amount of movement, and the top of the
      range is reserved for "as dramatic as this gets" rather than "the first point anything happens." */
   m.out.gain.setTargetAtTime(Math.pow(mo.depth,0.4),t,0.15);
+  modWire(k);
 }
 
 
@@ -2524,7 +2553,11 @@ class FM extends AudioWorkletProcessor{
     this.port.onmessage=e=>{const d=e.data;if(d.t==='on'&&!(isFinite(d.note)&&isFinite(d.vel)&&isFinite(d.gain)))return;if((d.t==='note'&&!isFinite(d.note))||(d.t==='gain'&&!isFinite(d.gain))||(d.t==='bend'&&!isFinite(d.cents)))return;if(d.t==='patch')this.patches[d.key]=d.p;else if(d.t==='init')this.poly=d.poly||16;else this.q.push(d)}}
   noteOn(d){
     const p=this.patches[d.key];if(!p)return;const sr=this.srs;
-    let v=this.v.length>=this.poly?(this.v.find(x=>x.rel)||this.v[0]):null;if(v)this.v.splice(this.v.indexOf(v),1);
+    /* v0.30: a stolen voice used to be deleted mid-waveform (a click whenever the FM poly limit was hit); it now
+       fades out over ~8 ms while the new note starts. A hard ceiling a few voices above poly still holds CPU. */
+    const live=this.v.filter(x=>!x.stolen);
+    let v=live.length>=this.poly?(live.find(x=>x.rel)||live[0]):null;if(v){v.stolen=true;v.rel=true;v.fade=0.008;v.ops.forEach(o=>o.env.off())}
+    while(this.v.length>=this.poly+4)this.v.splice(this.v.findIndex(x=>x.stolen)>=0?this.v.findIndex(x=>x.stolen):0,1);
     const note=d.note+(p.trans-24);
     const ops=p.ops.map(o=>{let ol=scaleOut(o.ol)+scaleLevel(note,o.bp,o.ld,o.rd,o.lc,o.rc);ol=Math.max(0,Math.min(127,ol))<<5;ol+=scaleVel(d.vel,o.kvs);
       const env=new Env(o.r,o.l,ol,scaleRate(note,o.rs),sr);
@@ -2765,6 +2798,9 @@ const voiceLabel=n=>(TIMBRES[n]&&TIMBRES[n].label)||n;
 DXB.banks.push({id:'lume',name:'Lume FM',builtin:true,patches:LUME_FM_PATCHES});dxRegister(DXB.banks[0]);dxLoadSaved();
 
 const LUME_FILTER_WORKLET_SRC = `
+/* v0.30: rational tanh (Pade, clamped at +/-3 where it meets 1 exactly). Within ~2% of Math.tanh, several times
+   cheaper - this filter calls it twice per sample on every chord and melody note. */
+const lfTanh = x => { x = x < -3 ? -3 : x > 3 ? 3 : x; return x * (27 + x * x) / (27 + 9 * x * x); };
 class LumeFilterProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [
@@ -2774,6 +2810,7 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
   }
   constructor() {
     super();
+    this.fadeIn = 0;   /* v0.29: see process() */
     this.y1 = 0; this.y2 = 0; this.y3 = 0; this.y4 = 0;
     this.heard = false; this.idle = 0; this.rng = 22222; this.lastCut = -1; this.lastRes = -1; this.g = 0; this.k = 0;
   }
@@ -2805,7 +2842,9 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
       // one-pole coefficient per stage, from a simple (non-prewarped) cutoff mapping —
       // cheap and stable; loses some tuning accuracy near Nyquist, which doesn't matter
       // for musical filter sweeps well under 20kHz.
-      const g = perSample ? 1 - Math.exp(-2 * Math.PI * Math.min(cutoff, sr * 0.45) / sr) : gC;
+      /* v0.30: during a cutoff sweep the coefficient is refreshed every 8 samples, not every sample (inaudible, 8x fewer Math.exp) */
+      if (perSample && (i & 7) === 0) { gC = 1 - Math.exp(-2 * Math.PI * Math.min(cutoff, sr * 0.45) / sr); }
+      const g = gC;
       // Feedback amount, compensated for cutoff. A plain "k = res * constant" (the textbook
       // starting point for this topology) turned out NOT to self-oscillate at higher cutoffs
       // when tested — the simple one-pole stages lose phase accuracy approaching Nyquist, so
@@ -2836,12 +2875,16 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
       /* v2: gain compensation moved to the OUTPUT. Scaling the input by (1+k) before tanh overdrove
          the nonlinearity (~7x on Poly), and that clipping aliased into a harsh hiss/whistle. The
          filtered output is soft-limited instead, which also caps self-oscillation level. */
-      let fb = Math.tanh(x + seed - k * y4);
+      /* v0.29: a new filter comes alive on the audio thread a few ms after its note's oscillators have
+         started, so its first sample used to be a jump into the middle of a waveform - a small pop at every
+         note start (measured). Fading the input in over the first ~6 ms makes that entry smooth. */
+      const xi = this.fadeIn < 256 ? x * (++this.fadeIn) / 256 : x;
+      let fb = lfTanh(xi + seed - k * y4);
       y1 += g * (fb - y1);
       y2 += g * (y1 - y2);
       y3 += g * (y2 - y3);
       y4 += g * (y3 - y4);
-      out[i] = 1.5 * Math.tanh(y4 * (1 + k) / 1.5);
+      out[i] = 1.5 * lfTanh(y4 * (1 + k) / 1.5);
     }
     if (!(isFinite(y1) && isFinite(y2) && isFinite(y3) && isFinite(y4))) { y1 = y2 = y3 = y4 = 0; out.fill(0); }   /* v11: never let a bad value escape into the effect loops */
     this.y1 = y1; this.y2 = y2; this.y3 = y3; this.y4 = y4; this.rng = rng;
@@ -3132,6 +3175,7 @@ function buildShimmerReverb() {
 /* The reverb "send" bus every instrument already connects to (racks[k].sr, the sparkle bus,
    percussion) -- unchanged call sites, only what's on the other end of the wire changed. */
 let shimmerBus = null, shimSplit = null, shimLines = 3;
+let shimOut=null;
 function shimmerReverbBus() {
   if (shimmerBus) return shimmerBus;
   buildShimmerReverb();
@@ -3140,7 +3184,7 @@ function shimmerReverbBus() {
   const wetL = AC.createGain(), wetR = AC.createGain(); wetL.gain.value = 1.4; wetR.gain.value = 1.4;
   tankOutL.connect(wetL); tankOutR.connect(wetR); revWet = [wetL, wetR];
   const pan = AC.createChannelMerger(2); wetL.connect(pan, 0, 0); wetR.connect(pan, 0, 1);
-  pan.connect(fxRetIn());   /* v0.20: returns get a low cut and the FX OFF switch */
+  pan.connect(fxRetIn());shimOut=pan;   /* v0.20: returns get a low cut and the FX OFF switch */
   revMonA = AC.createAnalyser(); revMonA.fftSize = 512; pan.connect(revMonA);   /* v0.23d: the effects governor watches the reverb's own output */
   return shimmerBus;
 }
@@ -3201,10 +3245,11 @@ let recDest=null,recorder=null,recChunks=[],recState='idle',recStartT=0,recTimer
 
 function recSupported(){return typeof MediaRecorder!=='undefined'&&typeof AudioContext!=='undefined'}
 function ensureRecDest(){
-  if(recDest)return;
-  recDest=AC.createMediaStreamDestination();
-  if(masterOut)masterOut.connect(recDest);else{masterFilt2.connect(recDest);if(masterRevGain)masterRevGain.connect(recDest)}
+  if(!recDest)recDest=AC.createMediaStreamDestination();
+  if(masterOut)masterOut.connect(recDest);else{masterFilt2.connect(recDest);if(masterRevGain)masterRevGain.connect(recDest)}   /* connect() is idempotent */
 }
+function recDestUnhook(){if(!recDest)return;   /* v0.30: the recorder's tap stayed wired (and processing) for the rest of the session */
+  try{(masterOut||masterFilt2).disconnect(recDest)}catch(e){}if(!masterOut&&masterRevGain){try{masterRevGain.disconnect(recDest)}catch(e){}}}
 function startRecording(){
   if(!recSupported()||recState==='recording')return;
   initAudio();if(AC.state==='suspended')AC.resume();
@@ -3225,7 +3270,7 @@ function stopRecording(){
   if(!recorder||recState!=='recording')return;
   recState='processing';recordUI();
   recorder.onstop=async()=>{
-    clearInterval(recTimer);recTimer=null;
+    clearInterval(recTimer);recTimer=null;recDestUnhook();
     try{
       const type=recorder.mimeType||'audio/webm',elapsed=(performance.now()-recStartT)/1000;
       const blob=new Blob(recChunks,{type});recChunks=[];
@@ -3538,9 +3583,11 @@ function droneToggle(){
    sparse events, Basinski/Hecker's tape-hiss grain) gets its depth from exactly these two things:
    the tone alone is never the whole picture. Both route through the chord rack, so they inherit
    whatever Filter/effects character the drone itself has, rather than sitting outside it. ===== */
-let TEXTURE={droneFollow:false,droneVoicing:'chord',droneSub:0,droneTone:1,droneBreath:0,droneBreathRate:0.35,droneWarble:0,dronePulse:0,dronePulseDiv:1,wind:0,crackle:0,grain:0,sparkle:0,grainTone:0.4,sparkleLen:0.45,droneLevel:0.7,sparkleLevel:0.55,shimmer:true,lv:2,revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,hiss:0.5,echoMix:0.5,echoTime:0.28,echoFb:0.55};
+let TEXTURE={droneFollow:false,droneVoicing:'chord',droneSub:0,droneTone:1,droneBreath:0,droneBreathRate:0.35,droneWarble:0,dronePulse:0,dronePulseDiv:1,wind:0,crackle:0,grain:0,sparkle:0,grainTone:0.4,sparkleLen:0.45,droneLevel:0.7,sparkleLevel:0.55,shimmer:false,lv:2,revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,hiss:0,echoMix:0.5,echoTime:0.28,echoFb:0.55};
 const TEXTURE_DEF=Object.assign({},TEXTURE);
-try{const o=JSON.parse(localStorage.getItem('lume-texture')||'null');if(o){if(o.lv!==2){delete o.droneLevel;delete o.sparkleLevel;delete o.grain}Object.assign(TEXTURE,o);TEXTURE.lv=2}}catch(e){}
+try{const o=JSON.parse(localStorage.getItem('lume-texture')||'null');if(o){if(o.lv!==2){delete o.droneLevel;delete o.sparkleLevel;delete o.grain}Object.assign(TEXTURE,o);TEXTURE.lv=2;
+  /* v0.30 start-dry migration (once): settings still at the old always-on defaults become off */
+  if(!o.dry30){if(o.shimmer===true)TEXTURE.shimmer=false;if(o.hiss===0.5)TEXTURE.hiss=0;TEXTURE.dry30=1;try{localStorage.setItem('lume-texture',JSON.stringify(TEXTURE))}catch(e){}}}}catch(e){}
 const lvl=v=>0.2*v*v;   /* perceptual taper: 100% = old 20%, 70% ~ old 10% (the usable zone found in testing) */
 const saveTexture=()=>{try{localStorage.setItem('lume-texture',JSON.stringify(TEXTURE))}catch(e){}};
 function syncTexture(){if(typeof syncDroneMenu==='function')syncDroneMenu()}
@@ -3662,7 +3709,7 @@ function ensureSparkleBus(){
 let sparkleNoVib=null;
 let sparkleTimer=0,sparkleOn=false,sparkleKick=null;
 const SPARKLE_VOICES=['Celeste','FMGlass','Vibes','Luna'];
-function setSparkle(density){
+function setSparkle(density){if(density>0)setTimeout(fxSleepCheck,0);
   sparkleOn=density>0.01;clearTimeout(sparkleTimer);sparkleKick=null;
   if(!sparkleOn)return;
   const step=()=>{
@@ -3853,6 +3900,7 @@ function makeNoise(){
   const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
 }
 function percHit(c,velMul){
+  lastPercAt=performance.now();fxSleepCheck();   /* v0.30: drums always send to the reverb - wake it first */
   velMul=velMul||1;
   midiDrum(c);
   if(!AC)return;
@@ -4320,12 +4368,11 @@ function plateStrings(side){
   }
   return out;
 }
-const plateVoices=[];
+const plateVoices=[],plateRing=[],PLATE_RING_MAX=LITE?20:32;
 function duckChord(){
   if(!AC||!heldChord)return;
   const g=volCurve(knobs.chordVol),t=AC.currentTime;
-  chordBus.gain.cancelScheduledValues(t);
-  chordBus.gain.setValueAtTime(chordBus.gain.value,t);
+  holdGain(chordBus.gain,t);   /* v0.29: was cancel + setValueAtTime(.value) - a tiny level jump on the held chord at every right-ribbon strike */
   chordBus.gain.setTargetAtTime(g*0.68,t,0.02);
   chordBus.gain.setTargetAtTime(g,t+0.1,0.12);
 }
@@ -4346,6 +4393,13 @@ function plateTrigger(side,midi,vel,dir){
     plateVoices.push(sv);
   }
   while(plateVoices.length>(LITE?24:12)){plateVoices.shift().release(LITE?0.3:undefined)}
+  /* v0.29: the cap above only counts strings still held; every struck string also rings out for its tail, so a
+     hard strum stacked dozens of ringing strings and the audio thread fell behind ("audio lag"). Ringing ribbon
+     strings now share a ceiling too: past it, the oldest one fades out in 30 ms (it's buried under the newer
+     strikes anyway). */
+  plateRing.push(v);if(plateVoices[plateVoices.length-1]!==v)plateRing.push(plateVoices[plateVoices.length-1]);
+  for(let i=plateRing.length-1;i>=0;i--)if(plateRing[i].gone)plateRing.splice(i,1);
+  while(plateRing.length>PLATE_RING_MAX){const o=plateRing.shift();if(o.kill)o.kill();else o.release(0.05)}
   if(side==='R')duckChord();
   const mk=side==='L'?'plateL':'plateR',tk=mk+midi;
   mOn(mk,midi,vel*up);
@@ -5089,7 +5143,7 @@ function buildShimMenu(){
   dm.appendChild(sec('Noise'));
   dm.appendChild(row('Tape hiss',slider('hiss')));
   const rs=document.createElement('button');rs.type='button';rs.className='ibtn';rs.textContent='Reset';rs.style.marginTop='6px';
-  rs.onclick=()=>{Object.assign(TEXTURE,{revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,shimmer:true,echoMix:0.5,echoTime:0.28,echoFb:0.55});saveTexture();applyReverb();applyEcho();syncShimMenu()};
+  rs.onclick=()=>{Object.assign(TEXTURE,{revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,shimmer:false,echoMix:0.5,echoTime:0.28,echoFb:0.55});saveTexture();applyReverb();applyEcho();syncShimMenu()};
   dm.appendChild(rs);
   const cl=document.createElement('button');cl.type='button';cl.className='mclose';cl.textContent='✕';
   cl.onclick=()=>{dm.classList.remove('open');$('chipShim').classList.remove('open')};dm.appendChild(cl);
@@ -5940,11 +5994,30 @@ function setMasterLow(v){masterLowAmt=Math.max(0,Math.min(1,v));if(masterHP&&AC)
 /* ---- effect returns: a fixed low cut (the classic live-mix fix for mud) + FX OFF ---- */
 function fxRetIn(){if(!fxRet){const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=160;hp.Q.value=0.6;
     const kill=AC.createGain();kill.gain.value=FXOFF?0:1;hp.connect(kill);kill.connect(comp);fxRet={hp,kill}}return fxRet.hp}
+/* v0.30 effect sleep. The shimmer reverb (~60 nodes in a feedback loop) and the tape echo used to run nonstop,
+   even with nothing sent to them - about 40% of Lume's idle audio work. When nothing can feed one (no instrument
+   send turned up, sparkle off, no drum played lately, not frozen) and its tail has died away, its output is
+   unhooked so the browser stops processing the loop. Anything that can feed it wakes it before it sounds. */
+const fxSleep={rev:{awake:true,quiet:0},dly:{awake:true,quiet:0}};let lastPercAt=-1e9;
+function fxNeed(kind){if(typeof FREEZE!=='undefined'&&FREEZE)return true;
+  if(performance.now()-lastPercAt<8000)return true;
+  if(typeof TEXTURE!=='undefined'&&TEXTURE.sparkle>0)return true;
+  const part=kind==='rev'?'sr':'sd';for(const k in racks)if(racks[k]&&racks[k].on[part])return true;
+  return false}
+function fxSetAwake(kind,on){const S=fxSleep[kind];if(S.awake===on)return;S.awake=on;S.quiet=0;
+  try{if(kind==='rev'){if(!shimOut)return;if(on){shimOut.connect(fxRetIn());if(revMonA)shimOut.connect(revMonA)}else shimOut.disconnect()}
+    else{if(!dlyOut||!dly)return;if(on){dlyOut.connect(fxRetIn());if(dlyMonA)dly.connect(dlyMonA)}else{dlyOut.disconnect();if(dlyMonA){try{dly.disconnect(dlyMonA)}catch(e){}}}}}catch(e){S.awake=!on}}
+function fxSleepCheck(){if(!AC)return;['rev','dly'].forEach(k=>{if(fxNeed(k))fxSetAwake(k,true)})}
+setInterval(()=>{if(!AC)return;const now=performance.now();
+  [['rev',revMonA],['dly',dlyMonA]].forEach(([k,an])=>{const S=fxSleep[k];
+    if(fxNeed(k)){fxSetAwake(k,true);return}
+    if(!S.awake||!an)return;an.getFloatTimeDomainData(govBuf);let pk=0;for(let i=0;i<govBuf.length;i++){const a=govBuf[i]<0?-govBuf[i]:govBuf[i];if(a>pk)pk=a}
+    if(pk>1e-4){S.quiet=0;return}if(!S.quiet)S.quiet=now;else if(now-S.quiet>3000)fxSetAwake(k,false)})},500);
 function setFxOff(on){FXOFF=!!on;if(AC){const t=AC.currentTime;if(fxRet)fxRet.kill.gain.setTargetAtTime(FXOFF?0:1,t,0.02);applyMasterRev()}perfSync()}
 function freezeApply(){if(!AC||!FREEZE)return;const t=AC.currentTime;
   if(shimmerBus)shimmerBus.gain.setTargetAtTime(0,t,0.03);revLineFb.forEach(g=>g.gain.setTargetAtTime(revMap.decay(TEXTURE.shimmer?SHIM_DECAY_CAP:1),t,0.05));
   if(dlyIn)dlyIn.gain.setTargetAtTime(0,t,0.03);if(dlyFb)dlyFb.gain.setTargetAtTime(0.8,t,0.05)}
-function setFreeze(on){FREEZE=!!on;if(AC){if(FREEZE)freezeApply();else{const t=AC.currentTime;if(shimmerBus)shimmerBus.gain.setTargetAtTime(REV_IN_TRIM,t,0.05);if(dlyIn)dlyIn.gain.setTargetAtTime(1,t,0.05);applyReverb();applyEcho()}}perfSync()}
+function setFreeze(on){FREEZE=!!on;fxSleepCheck();if(AC){if(FREEZE)freezeApply();else{const t=AC.currentTime;if(shimmerBus)shimmerBus.gain.setTargetAtTime(REV_IN_TRIM,t,0.05);if(dlyIn)dlyIn.gain.setTargetAtTime(1,t,0.05);applyReverb();applyEcho()}}perfSync()}
 /* ---- LOCK ---- */
 const LOCK_SEL='#fnbar,#deck,#instMenu,.pillkeys,#d-title,.transport,.pad,#recMod';
 const LOCK_ALLOW='[data-action=arp],[data-action=arphold],[data-action=reset],#slotBtn,#slotPick,[data-action=play],#fnbar .bhold';
