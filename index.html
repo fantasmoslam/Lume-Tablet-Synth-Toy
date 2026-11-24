@@ -6063,6 +6063,10 @@ setInterval(()=>{if(!AC||(typeof flushing!=='undefined'&&flushing))return;
    /* v0.27b: never suspend/resume a busy stream (that nudge could itself drop the sound on a loaded tablet), and only
       count a stall when checks are properly spaced - a lagging page can fire two checks back-to-back */
    if(AC.state==='running'&&t===lastT&&gap>=400){if(!stuckSince)stuckSince=now;stuckN++;
+     /* v0.28: 27b dropped the wake-up nudge entirely, so a stall that 25b recovered from in about half a second now
+        stayed silent until the restart banner. Nudge once, and only after the clock has been frozen for three
+        well-spaced checks (~1.5 s) - by then the sound is already gone, so the nudge can't make it worse. */
+     if(stuckN===3){try{AC.suspend().then(()=>AC.resume()).catch(()=>{})}catch(e){}}
      if(stuckN>=6&&now-stuckSince>3000&&!$('audioDead'))audioDeadUI()}
    else if(t!==lastT){stuckSince=0;stuckN=0;const d=$('audioDead');if(d)d.remove()}
    lastT=t},500)}
