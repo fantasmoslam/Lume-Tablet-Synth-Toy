@@ -38,3 +38,25 @@
   In a 16-stroke hard-strum test, peak sounding oscillators dropped from 120 to 50.
 - Vibrato and movement/bend buses are only wired into notes while they carry signal. An oscillator with
   anything connected to its detune costs Chrome about 2.5-3x as much, even when the bus is silent.
+
+# LUME v0.30 (sound-engine audit)
+
+Measured offline (render speed vs realtime, best of 4, higher is better), v0.27b -> v0.30:
+idle 9.4x -> 21.5x, chord + 6 notes held 5.1x -> 8.8x, 40-string strum 6.1x -> 8.8x.
+
+## Leaks
+- Every note left its per-partial gain nodes wired together after it ended (~576 dead links per
+  play-through, growing all session). Lume's connection count now stays flat: it was 857 -> 1455 over two
+  full feature cycles in v0.29, and is now 256 -> 256.
+- The recorder's tap on the master stayed wired (and processing) after recording stopped. It's now unhooked.
+
+## Always-on work removed
+- Movement LFOs (one per instrument) were wired into their targets even at depth 0, the default. An LFO
+  wired into a filter's frequency makes that filter recompute every sample. They're now only wired in
+  while depth is up.
+
+## Engine efficiency
+- Lume filter: a rational tanh in place of Math.tanh (within ~2%), and the coefficient during cutoff sweeps
+  refreshed every 8 samples instead of every sample.
+- FM (DX7) engine: when the poly limit is hit, the stolen voice fades out over 8 ms instead of being cut
+  mid-waveform.

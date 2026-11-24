@@ -2296,7 +2296,7 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
         const o=AC.createOscillator();o.type=type;o.frequency.value=freq(m)*mul;
         o._mul=mul;o._base=det+uOff;
         const og=AC.createGain();og.gain.value=g/Math.sqrt(midis.length*uniN);
-        o.connect(og);og.connect(sg);
+        o.connect(og);og.connect(sg);o._og=og;
         detLink(amtGain,o);
         if(opts&&opts.mod)detLink(opts.mod,o);
         o.start(t);oscs.push(o);
@@ -2320,7 +2320,7 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
       setTimeout(()=>{if(!v.gone){v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc}
         /* also unhook each oscillator from the shared vibrato/modulation buses -- those links used to stay forever */
         slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop()}catch(e){}detUnlink(amtGain,o);
-          if(opts&&opts.mod)detUnlink(opts.mod,o);try{o.disconnect()}catch(e){}}));
+          if(opts&&opts.mod)detUnlink(opts.mod,o);try{o.disconnect()}catch(e){}try{o._og.disconnect()}catch(e){}}));   /* v0.30: the per-partial gains were never unhooked (~576 leaked links per play-through) */
         slots.forEach(s=>{try{s.sg.disconnect()}catch(e){}});amp.disconnect();filt.disconnect();},rr*1000+200)}};
   const peak=level/Math.sqrt(midis.length);
   amp.gain.setValueAtTime(0,t);
@@ -2449,20 +2449,27 @@ function scheduleDrift(m){
                     stale timeout finally fires */
   step();
 }
+/* v0.30: Movement is off (depth 0) by default, but every instrument's LFO was still wired into its target - and an
+   LFO wired into a filter's frequency forces that filter to recompute its coefficients every sample. All four
+   Movement LFOs ran for nothing all session (measured ~25% of idle audio work). The LFO is now only wired in while
+   its depth is up; unwired, it sits on an island the browser doesn't process at all. */
 function retargetMod(k){
   const m=mods[k];if(!m)return;
-  if(m.scaleNode){try{m.scaleNode.disconnect()}catch(e){}}
+  clearTimeout(m.unwireT);if(m.scaleNode&&m.wired){try{m.scaleNode.disconnect()}catch(e){}try{m.out.disconnect(m.scaleNode)}catch(e){}}
   const target=INST[k].mod.target,scale=AC.createGain();
   scale.gain.value=target==='filter'?filterModRangeHz(k):(MOD_TARGET_SCALE[target]||0);
-  m.out.connect(scale);m.scaleNode=scale;
+  m.scaleNode=scale;m.wired=false;m.wireTarget=null;
   const r=racks[k];
-  if(target==='filter'&&r)scale.connect(r.filt.frequency);
-  else if(target==='pan'&&r)scale.connect(r.pan.pan);
-  else if(target==='pitch'){
-    const bus=k.startsWith('plate')?plateMod[sideOf(k)]:modMix[k];
-    if(bus)scale.connect(bus);
-  }
+  if(target==='filter'&&r)m.wireTarget=r.filt.frequency;
+  else if(target==='pan'&&r)m.wireTarget=r.pan.pan;
+  else if(target==='pitch')m.wireTarget=(k.startsWith('plate')?plateMod[sideOf(k)]:modMix[k])||null;
+  modWire(k);
 }
+function modWire(k){const m=mods[k];if(!m||!m.scaleNode||!m.wireTarget)return;
+  const want=(INST[k].mod.depth||0)>0.001;clearTimeout(m.unwireT);
+  if(want&&!m.wired){m.out.connect(m.scaleNode);m.scaleNode.connect(m.wireTarget);m.wired=true}
+  else if(!want&&m.wired)m.unwireT=setTimeout(()=>{if((INST[k].mod.depth||0)>0.001||!m.wired)return;
+    try{m.out.disconnect(m.scaleNode)}catch(e){}try{m.scaleNode.disconnect()}catch(e){}m.wired=false},800)}   /* after the depth fade */
 function applyMod(k){
   const m=mods[k];if(!m||!AC)return;const mo=INST[k].mod,t=AC.currentTime;
   m.lfo.frequency.setTargetAtTime(modHz(k),t,0.3);
@@ -2473,6 +2480,7 @@ function applyMod(k){
      a moderate setting already produces a clearly audible amount of movement, and the top of the
      range is reserved for "as dramatic as this gets" rather than "the first point anything happens." */
   m.out.gain.setTargetAtTime(Math.pow(mo.depth,0.4),t,0.15);
+  modWire(k);
 }
 
 
@@ -2543,7 +2551,11 @@ class FM extends AudioWorkletProcessor{
     this.port.onmessage=e=>{const d=e.data;if(d.t==='on'&&!(isFinite(d.note)&&isFinite(d.vel)&&isFinite(d.gain)))return;if((d.t==='note'&&!isFinite(d.note))||(d.t==='gain'&&!isFinite(d.gain))||(d.t==='bend'&&!isFinite(d.cents)))return;if(d.t==='patch')this.patches[d.key]=d.p;else if(d.t==='init')this.poly=d.poly||16;else this.q.push(d)}}
   noteOn(d){
     const p=this.patches[d.key];if(!p)return;const sr=this.srs;
-    let v=this.v.length>=this.poly?(this.v.find(x=>x.rel)||this.v[0]):null;if(v)this.v.splice(this.v.indexOf(v),1);
+    /* v0.30: a stolen voice used to be deleted mid-waveform (a click whenever the FM poly limit was hit); it now
+       fades out over ~8 ms while the new note starts. A hard ceiling a few voices above poly still holds CPU. */
+    const live=this.v.filter(x=>!x.stolen);
+    let v=live.length>=this.poly?(live.find(x=>x.rel)||live[0]):null;if(v){v.stolen=true;v.rel=true;v.fade=0.008;v.ops.forEach(o=>o.env.off())}
+    while(this.v.length>=this.poly+4)this.v.splice(this.v.findIndex(x=>x.stolen)>=0?this.v.findIndex(x=>x.stolen):0,1);
     const note=d.note+(p.trans-24);
     const ops=p.ops.map(o=>{let ol=scaleOut(o.ol)+scaleLevel(note,o.bp,o.ld,o.rd,o.lc,o.rc);ol=Math.max(0,Math.min(127,ol))<<5;ol+=scaleVel(d.vel,o.kvs);
       const env=new Env(o.r,o.l,ol,scaleRate(note,o.rs),sr);
@@ -2784,6 +2796,9 @@ const voiceLabel=n=>(TIMBRES[n]&&TIMBRES[n].label)||n;
 DXB.banks.push({id:'lume',name:'Lume FM',builtin:true,patches:LUME_FM_PATCHES});dxRegister(DXB.banks[0]);dxLoadSaved();
 
 const LUME_FILTER_WORKLET_SRC = `
+/* v0.30: rational tanh (Pade, clamped at +/-3 where it meets 1 exactly). Within ~2% of Math.tanh, several times
+   cheaper - this filter calls it twice per sample on every chord and melody note. */
+const lfTanh = x => { x = x < -3 ? -3 : x > 3 ? 3 : x; return x * (27 + x * x) / (27 + 9 * x * x); };
 class LumeFilterProcessor extends AudioWorkletProcessor {
   static get parameterDescriptors() {
     return [
@@ -2825,7 +2840,9 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
       // one-pole coefficient per stage, from a simple (non-prewarped) cutoff mapping —
       // cheap and stable; loses some tuning accuracy near Nyquist, which doesn't matter
       // for musical filter sweeps well under 20kHz.
-      const g = perSample ? 1 - Math.exp(-2 * Math.PI * Math.min(cutoff, sr * 0.45) / sr) : gC;
+      /* v0.30: during a cutoff sweep the coefficient is refreshed every 8 samples, not every sample (inaudible, 8x fewer Math.exp) */
+      if (perSample && (i & 7) === 0) { gC = 1 - Math.exp(-2 * Math.PI * Math.min(cutoff, sr * 0.45) / sr); }
+      const g = gC;
       // Feedback amount, compensated for cutoff. A plain "k = res * constant" (the textbook
       // starting point for this topology) turned out NOT to self-oscillate at higher cutoffs
       // when tested — the simple one-pole stages lose phase accuracy approaching Nyquist, so
@@ -2860,12 +2877,12 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
          started, so its first sample used to be a jump into the middle of a waveform - a small pop at every
          note start (measured). Fading the input in over the first ~6 ms makes that entry smooth. */
       const xi = this.fadeIn < 256 ? x * (++this.fadeIn) / 256 : x;
-      let fb = Math.tanh(xi + seed - k * y4);
+      let fb = lfTanh(xi + seed - k * y4);
       y1 += g * (fb - y1);
       y2 += g * (y1 - y2);
       y3 += g * (y2 - y3);
       y4 += g * (y3 - y4);
-      out[i] = 1.5 * Math.tanh(y4 * (1 + k) / 1.5);
+      out[i] = 1.5 * lfTanh(y4 * (1 + k) / 1.5);
     }
     if (!(isFinite(y1) && isFinite(y2) && isFinite(y3) && isFinite(y4))) { y1 = y2 = y3 = y4 = 0; out.fill(0); }   /* v11: never let a bad value escape into the effect loops */
     this.y1 = y1; this.y2 = y2; this.y3 = y3; this.y4 = y4; this.rng = rng;
@@ -3225,10 +3242,11 @@ let recDest=null,recorder=null,recChunks=[],recState='idle',recStartT=0,recTimer
 
 function recSupported(){return typeof MediaRecorder!=='undefined'&&typeof AudioContext!=='undefined'}
 function ensureRecDest(){
-  if(recDest)return;
-  recDest=AC.createMediaStreamDestination();
-  if(masterOut)masterOut.connect(recDest);else{masterFilt2.connect(recDest);if(masterRevGain)masterRevGain.connect(recDest)}
+  if(!recDest)recDest=AC.createMediaStreamDestination();
+  if(masterOut)masterOut.connect(recDest);else{masterFilt2.connect(recDest);if(masterRevGain)masterRevGain.connect(recDest)}   /* connect() is idempotent */
 }
+function recDestUnhook(){if(!recDest)return;   /* v0.30: the recorder's tap stayed wired (and processing) for the rest of the session */
+  try{(masterOut||masterFilt2).disconnect(recDest)}catch(e){}if(!masterOut&&masterRevGain){try{masterRevGain.disconnect(recDest)}catch(e){}}}
 function startRecording(){
   if(!recSupported()||recState==='recording')return;
   initAudio();if(AC.state==='suspended')AC.resume();
@@ -3249,7 +3267,7 @@ function stopRecording(){
   if(!recorder||recState!=='recording')return;
   recState='processing';recordUI();
   recorder.onstop=async()=>{
-    clearInterval(recTimer);recTimer=null;
+    clearInterval(recTimer);recTimer=null;recDestUnhook();
     try{
       const type=recorder.mimeType||'audio/webm',elapsed=(performance.now()-recStartT)/1000;
       const blob=new Blob(recChunks,{type});recChunks=[];
