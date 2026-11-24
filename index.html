@@ -1807,7 +1807,16 @@ function applyMasterFilt(){if(!masterFilt)return;const f=mfiltFreq(masterCut),q=
 let masterRevAmt=0;try{const s=localStorage.getItem('lyra-mrev');if(s!==null){const v=+s;if(v>=0&&v<=1)masterRevAmt=v}}catch(e){}
 const mrevHP=v=>600-v*450;   /* wetter = lets more low end into the tail, so it feels bigger/wider, not just louder */
 function setMasterRev(v){masterRevAmt=Math.max(0,Math.min(1,v));applyMasterRev();saveLater('lyra-mrev',()=>masterRevAmt)}
-function applyMasterRev(){if(!masterRevGain)return;masterRevGain.gain.setTargetAtTime(masterRevAmt*0.9*(typeof FXOFF!=='undefined'&&FXOFF?0:1),AC.currentTime,0.04);masterRevHP.frequency.setTargetAtTime(mrevHP(masterRevAmt),AC.currentTime,0.04)}
+/* v0.28: the master reverb's 3.2 s convolution used to run nonstop, even at 0 (the default) - measured as
+   about 40% of Lume's idle audio work. It is now only fed while it can be heard; once it is turned
+   down (or FX OFF) it finishes its tail and is unhooked, so the tablet does no work for it at all. */
+let masterRevLinked=false,masterRevOffT=0;
+function masterRevRoute(){if(!masterRevHP||!masterFilt2)return;
+  const want=masterRevAmt>0.001&&!(typeof FXOFF!=='undefined'&&FXOFF);
+  if(want){clearTimeout(masterRevOffT);masterRevOffT=0;if(!masterRevLinked){masterFilt2.connect(masterRevHP);masterRevLinked=true}}
+  else if(masterRevLinked&&!masterRevOffT)masterRevOffT=setTimeout(()=>{masterRevOffT=0;
+    if(masterRevLinked&&!(masterRevAmt>0.001&&!(typeof FXOFF!=='undefined'&&FXOFF))){try{masterFilt2.disconnect(masterRevHP)}catch(e){}masterRevLinked=false}},4000)}
+function applyMasterRev(){if(!masterRevGain)return;masterRevRoute();masterRevGain.gain.setTargetAtTime(masterRevAmt*0.9*(typeof FXOFF!=='undefined'&&FXOFF?0:1),AC.currentTime,0.04);masterRevHP.frequency.setTargetAtTime(mrevHP(masterRevAmt),AC.currentTime,0.04)}
 
 let masterVolAmt=0.7;try{const s=localStorage.getItem('lyra-mvol');if(s!==null){const v=+s;if(v>=0&&v<=1)masterVolAmt=v}}catch(e){}   /* v4: the master volume is remembered like the other master knobs */
 function setMasterVol(v){masterVolAmt=Math.max(0,Math.min(1,v));if(master)master.gain.setTargetAtTime(volCurve(masterVolAmt)*1.3,AC.currentTime,0.02);const ve=document.getElementById('vol');if(ve&&Math.abs(+ve.value-masterVolAmt)>0.001){ve.value=masterVolAmt;ve.style.setProperty('--fill',masterVolAmt*100+'%')}saveLater('lyra-mvol',()=>masterVolAmt)}
@@ -1900,6 +1909,13 @@ const PLATE_VOICES=['Harp','Nylon','String12','Koto','Gamelan','SteelPan','Xylo'
 /* LITE: tuned for weaker mobile CPUs (add ?full to the URL to get the original engine) */
 const AUDIO_HINT=()=>{let m='balanced';try{m=localStorage.getItem('lume-audio')||'balanced'}catch(e){}return({stable:'playback',balanced:'balanced',fast:'interactive'})[m]||'balanced'};
 const LITE=!/[?&]full/.test(location.search),MAXV=LITE?32:48,liveVoices=[];
+/* v0.28: MAXV only ever counted HELD notes - once a note was released it left liveVoices at once, so tails
+   ringing out (long-release patches, unison, fast playing) piled up with no ceiling and could overload the
+   tablet's audio thread. soundingVoices tracks every voice still making sound; when their oscillators pass
+   OSC_MAX, the oldest released tails are faded out fast (held notes are never touched by this). */
+const OSC_MAX=LITE?120:240,soundingVoices=new Set();let soundingOscs=0;
+function tailCap(){if(soundingOscs<=OSC_MAX)return;
+  for(const o of soundingVoices){if(soundingOscs<=OSC_MAX)break;if(o.dead&&!o.gone)o.kill()}}
 
 /* ===== dot-matrix display: wordmark -> resting scene -> reactive overlays ===== */
 const DM=(()=>{
@@ -2098,7 +2114,8 @@ function initAudio(){
   masterFilt2.connect(masterHP);masterHP.connect(masterHP2);masterHP2.connect(masterLim);masterLim.connect(masterOutIn);
   vuSplit=AC.createChannelSplitter(2);masterOut.connect(vuSplit);   /* v4 meter taps the true output, after the safety limiter */
   vuAnL=AC.createAnalyser();vuAnR=AC.createAnalyser();vuAnL.fftSize=vuAnR.fftSize=1024;vuSplit.connect(vuAnL,0);vuSplit.connect(vuAnR,1);
-  masterFilt2.connect(masterRevHP);masterRevHP.connect(masterRevConv);masterRevConv.connect(masterRevGain);masterRevGain.connect(masterLim);
+  masterRevHP.connect(masterRevConv);masterRevConv.connect(masterRevGain);masterRevGain.connect(masterLim);
+  masterRevRoute();   /* v0.28: only feed the master reverb while it's turned up */
   analyser=AC.createAnalyser();analyser.fftSize=1024;master.connect(analyser);
   meterBuf=new Uint8Array(analyser.fftSize);
   buildMeter();
@@ -2270,14 +2287,18 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
       setMidi(mm){const ff=freq(mm);oscs.forEach(o=>o.frequency.setTargetAtTime(ff*o._mul,AC.currentTime,0.02))},
       glide(c){oscs.forEach(o=>o.detune.setTargetAtTime(c+o._base,AC.currentTime,0.03))}});
   });
-  const v={slots,amp,filt,dead:false,protected:!!(opts&&opts.protect),
+  const nOsc=slots.reduce((n,s)=>n+s.oscs.length,0);
+  const v={slots,amp,filt,dead:false,gone:false,protected:!!(opts&&opts.protect),
+    kill(){if(v.gone)return;v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc;const t=AC.currentTime;   /* v0.28: fast fade for the tail cap */
+      amp.gain.cancelScheduledValues(t);amp.gain.setValueAtTime(amp.gain.value,t);amp.gain.linearRampToValueAtTime(0,t+0.03);
+      slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop(t+0.04)}catch(e){}}))},
     glide(c){slots.forEach(s=>s.glide(c))},
     release(fast){if(v.dead)return;v.dead=true;const t=AC.currentTime;const rr=fast||REL;
       amp.gain.cancelScheduledValues(t);
       amp.gain.setValueAtTime(Math.max(amp.gain.value,0.0001),t);
       amp.gain.exponentialRampToValueAtTime(0.0001,t+rr);
       slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop(t+rr+0.05)}catch(e){}}))   /* audio-clock stop: silent CPU ends on time even if the cleanup timer below is throttled */
-      setTimeout(()=>{
+      setTimeout(()=>{if(!v.gone){v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc}
         /* also unhook each oscillator from the shared vibrato/modulation buses -- those links used to stay forever */
         slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop()}catch(e){}try{amtGain.disconnect(o.detune)}catch(e){}
           if(opts&&opts.mod){try{opts.mod.disconnect(o.detune)}catch(e){}}try{o.disconnect()}catch(e){}}));
@@ -2295,6 +2316,7 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
   v.glide(initialCents??0);
   if(opts&&opts.porta){const now=AC.currentTime,c0=initialCents??0,tau=Math.max(0.005,opts.porta.time/3);   /* v0.18 glide: start at the last note, slide home */
     slots.forEach(s=>(s.oscs||[]).forEach(o=>{o.detune.cancelScheduledValues(now);o.detune.setValueAtTime(c0+opts.porta.off+o._base,now);o.detune.setTargetAtTime(c0+o._base,now,tau)}))}
+  soundingVoices.add(v);soundingOscs+=nOsc;tailCap();
   liveVoices.push(v);for(let i=liveVoices.length-1;i>=0;i--)if(liveVoices[i].dead)liveVoices.splice(i,1);
   while(liveVoices.length>MAXV){const k=liveVoices.findIndex(o=>!o.dead&&!o.protected);if(k<0)break;const o=liveVoices.splice(k,1)[0];o.release(0.3)}   /* oldest-first steal, in BOTH modes; protected voices (the drone) are never stolen - its exit is deliberately manual */
   return v;
@@ -6041,6 +6063,10 @@ setInterval(()=>{if(!AC||(typeof flushing!=='undefined'&&flushing))return;
    /* v0.27b: never suspend/resume a busy stream (that nudge could itself drop the sound on a loaded tablet), and only
       count a stall when checks are properly spaced - a lagging page can fire two checks back-to-back */
    if(AC.state==='running'&&t===lastT&&gap>=400){if(!stuckSince)stuckSince=now;stuckN++;
+     /* v0.28: 27b dropped the wake-up nudge entirely, so a stall that 25b recovered from in about half a second now
+        stayed silent until the restart banner. Nudge once, and only after the clock has been frozen for three
+        well-spaced checks (~1.5 s) - by then the sound is already gone, so the nudge can't make it worse. */
+     if(stuckN===3){try{AC.suspend().then(()=>AC.resume()).catch(()=>{})}catch(e){}}
      if(stuckN>=6&&now-stuckSince>3000&&!$('audioDead'))audioDeadUI()}
    else if(t!==lastT){stuckSince=0;stuckN=0;const d=$('audioDead');if(d)d.remove()}
    lastT=t},500)}
@@ -6331,8 +6357,9 @@ function deckOpen(tab,dir){
   if(tab==='seq'){deckClose();return}
   if(tab!=='pads'&&typeof padHeld!=='undefined'){padHeld.forEach((v,i)=>padUp(i));padEdit=false;padAssignClose()}
   const deck=$('deck');if(!deck||!DECK_DEFS[tab])return;
+  deck.querySelectorAll('.drow.drow-leaving').forEach(r=>r.remove());   /* v0.28: tapping tabs quickly used to leave rows stacked on top of each other */
   const old=deck.querySelector('.drow'),fresh=deckRender(tab);
-  if(old&&dir){fresh.classList.add(dir>0?'drow-in-r':'drow-in-l');
+  if(old&&dir){old.classList.add('drow-leaving');fresh.classList.add(dir>0?'drow-in-r':'drow-in-l');
     void fresh.offsetWidth;fresh.classList.remove('drow-in-r','drow-in-l');
     old.classList.add(dir>0?'drow-out-l':'drow-out-r');setTimeout(()=>old.remove(),280)}
   else if(old)old.remove();

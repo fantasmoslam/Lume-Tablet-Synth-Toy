@@ -2,7 +2,7 @@
 /* LUME service worker: precache the shell, network-first for navigations (so a fresh
    index.html always wins when you're online), cache-first for static assets.
    Bump VERSION when shipping a new build; the page reloads itself on controllerchange. */
-const VERSION = "lume-v27b";
+const VERSION = "lume-v28";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -37,8 +37,10 @@ self.addEventListener("fetch", e => {
   e.respondWith(
     (req.mode === "navigate"
       ? fetch(req).then(res => {                                   /* network-first for the page itself */
-          const copy = res.clone();
-          caches.open(VERSION).then(cache => cache.put(req, copy));
+          if (res && res.ok) {                                       /* v28: never cache an error page over the good copy */
+            const copy = res.clone();
+            caches.open(VERSION).then(cache => cache.put(req, copy));
+          }
           return res;
         }).catch(() => caches.match(req).then(hit => hit || caches.match("./index.html")))
       : caches.match(req).then(hit => hit || fetch(req).then(res => {   /* cache-first for icons/manifest */
