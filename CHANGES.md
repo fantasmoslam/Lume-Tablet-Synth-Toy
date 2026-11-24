@@ -60,3 +60,12 @@ idle 9.4x -> 21.5x, chord + 6 notes held 5.1x -> 8.8x, 40-string strum 6.1x -> 8
   refreshed every 8 samples instead of every sample.
 - FM (DX7) engine: when the poly limit is hit, the stolen voice fades out over 8 ms instead of being cut
   mid-waveform.
+
+## Starts dry (v0.30, your call)
+- Defaults are now echo 0, reverb 0, shimmer off and tape hiss 0 on every instrument; effects are opt-in.
+  A one-time migration turns off saved settings that are still exactly the old defaults (echo 35% /
+  reverb 42%, shimmer on, hiss 50%). Anything you set yourself is kept.
+- The shimmer reverb and tape echo now sleep when nothing can feed them (no instrument send up, sparkle off,
+  no drums in the last 8 s, not frozen) and their tail has died away. Turning a send up, a drum hit, sparkle
+  or FREEZE wakes them before any sound reaches them.
+- Measured (offline, best of 3) vs v0.27b: idle 10.2x -> 34.2x, chord + 6 notes 5.5x -> 13.4x realtime.

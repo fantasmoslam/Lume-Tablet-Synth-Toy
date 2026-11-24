@@ -1839,14 +1839,15 @@ const KINDS=['chord','note','plateL','plateR'];
 const ENV0=()=>({on:false,a:.01,d:.4,s:.7,r:.3});   /* on:false = use the voice's own envelope */
 const MOD0=()=>({rate:.3,depth:0,target:'filter',shape:'sine'});   /* depth:0 = off by default, non-intrusive until turned on */
 const FX0=()=>({cut:1,res:.1,drv:0,cho:0,echo:0,rev:0,uni:0,wid:.3,vs:.6,gl:0});                 /* fully dry: used by the Clean preset. uni:0 = unison off (1 voice) */
-const FX_DEF=()=>({cut:1,res:.1,drv:0,cho:0,echo:.35,rev:.42,uni:0,wid:.3,vs:.6,gl:0});   /* v0.18: vs = velocity sensitivity, gl = glide (melody) */           /* starting point: about what the old always-on echo and reverb amounted to. Unison defaults off — it's an opt-in texture, not baked into old presets */
+const FX_DEF=()=>({cut:1,res:.1,drv:0,cho:0,echo:0,rev:0,   /* v0.30: Lume starts dry - effects are opt-in */ uni:0,wid:.3,vs:.6,gl:0});   /* v0.18: vs = velocity sensitivity, gl = glide (melody) */           /* starting point: about what the old always-on echo and reverb amounted to. Unison defaults off — it's an opt-in texture, not baked into old presets */
 const INST=(()=>{const d={};KINDS.forEach(k=>d[k]={oct:0,fx:FX_DEF(),env:ENV0(),mod:MOD0()});
   try{const o=JSON.parse(localStorage.getItem('lyra-inst')||'null');if(o)KINDS.forEach(k=>{if(o[k]){d[k].oct=Math.max(-3,Math.min(3,+o[k].oct||0));Object.assign(d[k].fx,o[k].fx||{});if(o[k].env&&typeof o[k].env==='object')Object.assign(d[k].env,o[k].env);
       if(o[k].mod&&typeof o[k].mod==='object')Object.assign(d[k].mod,o[k].mod);
-      if(!o.v&&!(o[k].fx&&(o[k].fx.echo>0||o[k].fx.rev>0))){d[k].fx.echo=FX_DEF().echo;d[k].fx.rev=FX_DEF().rev}}})}catch(e){}   /* older saves: show the hidden global amount on the sliders */
+      if(!o.v&&!(o[k].fx&&(o[k].fx.echo>0||o[k].fx.rev>0))){d[k].fx.echo=FX_DEF().echo;d[k].fx.rev=FX_DEF().rev}
+      if(!o.dry30&&Math.abs((d[k].fx.echo||0)-0.35)<1e-6&&Math.abs((d[k].fx.rev||0)-0.42)<1e-6){d[k].fx.echo=0;d[k].fx.rev=0}}})}catch(e){}   /* v0.30: old always-on defaults -> dry (once) */   /* older saves: show the hidden global amount on the sliders */
   return d})();
 function instForSave(){const o=JSON.parse(JSON.stringify(INST));try{if(camState.active&&camState.savedFx){o.chord.fx=Object.assign({},camState.savedFx);o.chord.mod.depth=camState.savedModDepth}}catch(e){}return o}   /* audit2: while the theremin is on, save the chord patch as it was before, not the theremin's forced settings */
-let saveInstT=0;function saveInst(){clearTimeout(saveInstT);saveInstT=setTimeout(()=>{try{localStorage.setItem('lyra-inst',JSON.stringify(Object.assign({v:2},instForSave())))}catch(e){}},300)}
+let saveInstT=0;function saveInst(){clearTimeout(saveInstT);saveInstT=setTimeout(()=>{try{localStorage.setItem('lyra-inst',JSON.stringify(Object.assign({v:2,dry30:1},instForSave())))}catch(e){}},300)}
 const octLabel=()=>KINDS.map(k=>(INST[k].oct>0?'+':'')+INST[k].oct).join(' ');
 const knobs={noteVol:0.7,plateL:0.6,plateR:0.6,chordVol:0.7};
 const volCurve=v=>Math.pow(Math.max(0,Math.min(1.3,v)),2.3);
@@ -2368,6 +2369,7 @@ function rackWire(r,part,on){
     if(part==='sd'){if(on)r.mix.connect(r.sd);else r.mix.disconnect(r.sd)}
     if(part==='sr'){if(on)r.mix.connect(r.sr);else r.mix.disconnect(r.sr)}
   }catch(e){}
+  if(on&&(part==='sr'||part==='sd')&&typeof fxSleepCheck==='function')fxSleepCheck();   /* v0.30: wake a sleeping reverb/echo */
 }
 /* A proper audio-fader taper: real mixing-desk sends and gain controls are laid out so that equal
    steps of the control give roughly equal steps in perceived loudness (dB), not equal steps in raw
@@ -3173,6 +3175,7 @@ function buildShimmerReverb() {
 /* The reverb "send" bus every instrument already connects to (racks[k].sr, the sparkle bus,
    percussion) -- unchanged call sites, only what's on the other end of the wire changed. */
 let shimmerBus = null, shimSplit = null, shimLines = 3;
+let shimOut=null;
 function shimmerReverbBus() {
   if (shimmerBus) return shimmerBus;
   buildShimmerReverb();
@@ -3181,7 +3184,7 @@ function shimmerReverbBus() {
   const wetL = AC.createGain(), wetR = AC.createGain(); wetL.gain.value = 1.4; wetR.gain.value = 1.4;
   tankOutL.connect(wetL); tankOutR.connect(wetR); revWet = [wetL, wetR];
   const pan = AC.createChannelMerger(2); wetL.connect(pan, 0, 0); wetR.connect(pan, 0, 1);
-  pan.connect(fxRetIn());   /* v0.20: returns get a low cut and the FX OFF switch */
+  pan.connect(fxRetIn());shimOut=pan;   /* v0.20: returns get a low cut and the FX OFF switch */
   revMonA = AC.createAnalyser(); revMonA.fftSize = 512; pan.connect(revMonA);   /* v0.23d: the effects governor watches the reverb's own output */
   return shimmerBus;
 }
@@ -3580,9 +3583,11 @@ function droneToggle(){
    sparse events, Basinski/Hecker's tape-hiss grain) gets its depth from exactly these two things:
    the tone alone is never the whole picture. Both route through the chord rack, so they inherit
    whatever Filter/effects character the drone itself has, rather than sitting outside it. ===== */
-let TEXTURE={droneFollow:false,droneVoicing:'chord',droneSub:0,droneTone:1,droneBreath:0,droneBreathRate:0.35,droneWarble:0,dronePulse:0,dronePulseDiv:1,wind:0,crackle:0,grain:0,sparkle:0,grainTone:0.4,sparkleLen:0.45,droneLevel:0.7,sparkleLevel:0.55,shimmer:true,lv:2,revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,hiss:0.5,echoMix:0.5,echoTime:0.28,echoFb:0.55};
+let TEXTURE={droneFollow:false,droneVoicing:'chord',droneSub:0,droneTone:1,droneBreath:0,droneBreathRate:0.35,droneWarble:0,dronePulse:0,dronePulseDiv:1,wind:0,crackle:0,grain:0,sparkle:0,grainTone:0.4,sparkleLen:0.45,droneLevel:0.7,sparkleLevel:0.55,shimmer:false,lv:2,revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,hiss:0,echoMix:0.5,echoTime:0.28,echoFb:0.55};
 const TEXTURE_DEF=Object.assign({},TEXTURE);
-try{const o=JSON.parse(localStorage.getItem('lume-texture')||'null');if(o){if(o.lv!==2){delete o.droneLevel;delete o.sparkleLevel;delete o.grain}Object.assign(TEXTURE,o);TEXTURE.lv=2}}catch(e){}
+try{const o=JSON.parse(localStorage.getItem('lume-texture')||'null');if(o){if(o.lv!==2){delete o.droneLevel;delete o.sparkleLevel;delete o.grain}Object.assign(TEXTURE,o);TEXTURE.lv=2;
+  /* v0.30 start-dry migration (once): settings still at the old always-on defaults become off */
+  if(!o.dry30){if(o.shimmer===true)TEXTURE.shimmer=false;if(o.hiss===0.5)TEXTURE.hiss=0;TEXTURE.dry30=1;try{localStorage.setItem('lume-texture',JSON.stringify(TEXTURE))}catch(e){}}}}catch(e){}
 const lvl=v=>0.2*v*v;   /* perceptual taper: 100% = old 20%, 70% ~ old 10% (the usable zone found in testing) */
 const saveTexture=()=>{try{localStorage.setItem('lume-texture',JSON.stringify(TEXTURE))}catch(e){}};
 function syncTexture(){if(typeof syncDroneMenu==='function')syncDroneMenu()}
@@ -3704,7 +3709,7 @@ function ensureSparkleBus(){
 let sparkleNoVib=null;
 let sparkleTimer=0,sparkleOn=false,sparkleKick=null;
 const SPARKLE_VOICES=['Celeste','FMGlass','Vibes','Luna'];
-function setSparkle(density){
+function setSparkle(density){if(density>0)setTimeout(fxSleepCheck,0);
   sparkleOn=density>0.01;clearTimeout(sparkleTimer);sparkleKick=null;
   if(!sparkleOn)return;
   const step=()=>{
@@ -3895,6 +3900,7 @@ function makeNoise(){
   const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
 }
 function percHit(c,velMul){
+  lastPercAt=performance.now();fxSleepCheck();   /* v0.30: drums always send to the reverb - wake it first */
   velMul=velMul||1;
   midiDrum(c);
   if(!AC)return;
@@ -5137,7 +5143,7 @@ function buildShimMenu(){
   dm.appendChild(sec('Noise'));
   dm.appendChild(row('Tape hiss',slider('hiss')));
   const rs=document.createElement('button');rs.type='button';rs.className='ibtn';rs.textContent='Reset';rs.style.marginTop='6px';
-  rs.onclick=()=>{Object.assign(TEXTURE,{revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,shimmer:true,echoMix:0.5,echoTime:0.28,echoFb:0.55});saveTexture();applyReverb();applyEcho();syncShimMenu()};
+  rs.onclick=()=>{Object.assign(TEXTURE,{revDecay:0.5,revShim:0.625,revTone:0.6,revMix:0.58,shimmer:false,echoMix:0.5,echoTime:0.28,echoFb:0.55});saveTexture();applyReverb();applyEcho();syncShimMenu()};
   dm.appendChild(rs);
   const cl=document.createElement('button');cl.type='button';cl.className='mclose';cl.textContent='✕';
   cl.onclick=()=>{dm.classList.remove('open');$('chipShim').classList.remove('open')};dm.appendChild(cl);
@@ -5988,11 +5994,30 @@ function setMasterLow(v){masterLowAmt=Math.max(0,Math.min(1,v));if(masterHP&&AC)
 /* ---- effect returns: a fixed low cut (the classic live-mix fix for mud) + FX OFF ---- */
 function fxRetIn(){if(!fxRet){const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=160;hp.Q.value=0.6;
     const kill=AC.createGain();kill.gain.value=FXOFF?0:1;hp.connect(kill);kill.connect(comp);fxRet={hp,kill}}return fxRet.hp}
+/* v0.30 effect sleep. The shimmer reverb (~60 nodes in a feedback loop) and the tape echo used to run nonstop,
+   even with nothing sent to them - about 40% of Lume's idle audio work. When nothing can feed one (no instrument
+   send turned up, sparkle off, no drum played lately, not frozen) and its tail has died away, its output is
+   unhooked so the browser stops processing the loop. Anything that can feed it wakes it before it sounds. */
+const fxSleep={rev:{awake:true,quiet:0},dly:{awake:true,quiet:0}};let lastPercAt=-1e9;
+function fxNeed(kind){if(typeof FREEZE!=='undefined'&&FREEZE)return true;
+  if(performance.now()-lastPercAt<8000)return true;
+  if(typeof TEXTURE!=='undefined'&&TEXTURE.sparkle>0)return true;
+  const part=kind==='rev'?'sr':'sd';for(const k in racks)if(racks[k]&&racks[k].on[part])return true;
+  return false}
+function fxSetAwake(kind,on){const S=fxSleep[kind];if(S.awake===on)return;S.awake=on;S.quiet=0;
+  try{if(kind==='rev'){if(!shimOut)return;if(on){shimOut.connect(fxRetIn());if(revMonA)shimOut.connect(revMonA)}else shimOut.disconnect()}
+    else{if(!dlyOut||!dly)return;if(on){dlyOut.connect(fxRetIn());if(dlyMonA)dly.connect(dlyMonA)}else{dlyOut.disconnect();if(dlyMonA){try{dly.disconnect(dlyMonA)}catch(e){}}}}}catch(e){S.awake=!on}}
+function fxSleepCheck(){if(!AC)return;['rev','dly'].forEach(k=>{if(fxNeed(k))fxSetAwake(k,true)})}
+setInterval(()=>{if(!AC)return;const now=performance.now();
+  [['rev',revMonA],['dly',dlyMonA]].forEach(([k,an])=>{const S=fxSleep[k];
+    if(fxNeed(k)){fxSetAwake(k,true);return}
+    if(!S.awake||!an)return;an.getFloatTimeDomainData(govBuf);let pk=0;for(let i=0;i<govBuf.length;i++){const a=govBuf[i]<0?-govBuf[i]:govBuf[i];if(a>pk)pk=a}
+    if(pk>1e-4){S.quiet=0;return}if(!S.quiet)S.quiet=now;else if(now-S.quiet>3000)fxSetAwake(k,false)})},500);
 function setFxOff(on){FXOFF=!!on;if(AC){const t=AC.currentTime;if(fxRet)fxRet.kill.gain.setTargetAtTime(FXOFF?0:1,t,0.02);applyMasterRev()}perfSync()}
 function freezeApply(){if(!AC||!FREEZE)return;const t=AC.currentTime;
   if(shimmerBus)shimmerBus.gain.setTargetAtTime(0,t,0.03);revLineFb.forEach(g=>g.gain.setTargetAtTime(revMap.decay(TEXTURE.shimmer?SHIM_DECAY_CAP:1),t,0.05));
   if(dlyIn)dlyIn.gain.setTargetAtTime(0,t,0.03);if(dlyFb)dlyFb.gain.setTargetAtTime(0.8,t,0.05)}
-function setFreeze(on){FREEZE=!!on;if(AC){if(FREEZE)freezeApply();else{const t=AC.currentTime;if(shimmerBus)shimmerBus.gain.setTargetAtTime(REV_IN_TRIM,t,0.05);if(dlyIn)dlyIn.gain.setTargetAtTime(1,t,0.05);applyReverb();applyEcho()}}perfSync()}
+function setFreeze(on){FREEZE=!!on;fxSleepCheck();if(AC){if(FREEZE)freezeApply();else{const t=AC.currentTime;if(shimmerBus)shimmerBus.gain.setTargetAtTime(REV_IN_TRIM,t,0.05);if(dlyIn)dlyIn.gain.setTargetAtTime(1,t,0.05);applyReverb();applyEcho()}}perfSync()}
 /* ---- LOCK ---- */
 const LOCK_SEL='#fnbar,#deck,#instMenu,.pillkeys,#d-title,.transport,.pad,#recMod';
 const LOCK_ALLOW='[data-action=arp],[data-action=arphold],[data-action=reset],#slotBtn,#slotPick,[data-action=play],#fnbar .bhold';
