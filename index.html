@@ -2232,6 +2232,26 @@ addEventListener('error',e=>{
   if(d)d.textContent='⚠ '+(e.message||'script error').slice(0,64);
 });
 function envFor(inst){const I=inst&&typeof INST!=='undefined'?INST[inst]:null;return I&&I.env&&I.env.on?I.env:null}
+/* v0.29: freeze a gain exactly where it is right now. cancelScheduledValues() drops the ramp in progress, and
+   gain.value is the level from the last audio block, so the old cancel + setValueAtTime(gain.value) let the
+   level jump at the moment of release - a small pop between notes. cancelAndHoldAtTime keeps it continuous. */
+/* v0.29 lazy pitch-mod links. Every oscillator had the vibrato bus and the movement/bend bus wired into its
+   detune, and an oscillator with ANY audio input on detune drops to Chrome's slow per-sample path - measured
+   2.5-3x the cost of a plain oscillator, even when the bus is silent. Each bus is now watched with a tiny
+   analyser: while it's silent (vibrato off, no movement, no bend) its notes aren't wired to it; the moment it
+   carries signal every sounding note is wired back in (within ~50 ms), and it's unwired after ~0.6 s of quiet. */
+const detLinks=new Map();
+function detBus(bus){let L=detLinks.get(bus);if(L)return L;
+  const an=AC.createAnalyser();an.fftSize=32;bus.connect(an);
+  L={live:true,oscs:new Set(),an,buf:new Float32Array(32),quiet:0};detLinks.set(bus,L);return L}
+function detLink(bus,o){if(!bus)return;const L=detBus(bus);L.oscs.add(o);if(L.live)bus.connect(o.detune)}
+function detUnlink(bus,o){if(!bus)return;const L=detLinks.get(bus);if(!L){try{bus.disconnect(o.detune)}catch(e){}return}
+  L.oscs.delete(o);if(L.live){try{bus.disconnect(o.detune)}catch(e){}}}
+setInterval(()=>{if(!AC||document.hidden)return;const now=performance.now();
+  detLinks.forEach((L,bus)=>{L.an.getFloatTimeDomainData(L.buf);let nz=false;for(let i=0;i<32;i++)if(L.buf[i]>1e-7||L.buf[i]<-1e-7){nz=true;break}
+    if(nz){L.quiet=0;if(!L.live){L.live=true;L.oscs.forEach(o=>{try{bus.connect(o.detune)}catch(e){}})}}
+    else if(L.live){if(!L.quiet)L.quiet=now;else if(now-L.quiet>600){L.live=false;L.oscs.forEach(o=>{try{bus.disconnect(o.detune)}catch(e){}})}}})},50);
+function holdGain(p,t){if(p.cancelAndHoldAtTime){p.cancelAndHoldAtTime(t);return}p.cancelScheduledValues(t);p.setValueAtTime(p.value,t)}
 function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
   {const FT=opts&&opts.T&&TIMBRES[opts.T];if(FT&&FT.fm){if(fmReady)return makeFMVoice(FT,midis,busIn,amtGain,level,initialCents,slotLevels,opts);opts=Object.assign({},opts,{T:'Poly'})}}   /* FM patches go to the FM engine (plain voice for the first instant while it loads) */
   const T=TIMBRES[(opts&&opts.T)||'Poly']||TIMBRES.Poly;
@@ -2277,12 +2297,12 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
         o._mul=mul;o._base=det+uOff;
         const og=AC.createGain();og.gain.value=g/Math.sqrt(midis.length*uniN);
         o.connect(og);og.connect(sg);
-        amtGain.connect(o.detune);
-        if(opts&&opts.mod)opts.mod.connect(o.detune);
+        detLink(amtGain,o);
+        if(opts&&opts.mod)detLink(opts.mod,o);
         o.start(t);oscs.push(o);
       }
     }
-    slots.push({oscs,
+    slots.push({oscs,sg,
       setLevel(l){sg.gain.setTargetAtTime(l,AC.currentTime,0.05)},
       setMidi(mm){const ff=freq(mm);oscs.forEach(o=>o.frequency.setTargetAtTime(ff*o._mul,AC.currentTime,0.02))},
       glide(c){oscs.forEach(o=>o.detune.setTargetAtTime(c+o._base,AC.currentTime,0.03))}});
@@ -2290,19 +2310,18 @@ function makeVoice(midis,busIn,amtGain,level,initialCents,slotLevels,opts){
   const nOsc=slots.reduce((n,s)=>n+s.oscs.length,0);
   const v={slots,amp,filt,dead:false,gone:false,protected:!!(opts&&opts.protect),
     kill(){if(v.gone)return;v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc;const t=AC.currentTime;   /* v0.28: fast fade for the tail cap */
-      amp.gain.cancelScheduledValues(t);amp.gain.setValueAtTime(amp.gain.value,t);amp.gain.linearRampToValueAtTime(0,t+0.03);
+      holdGain(amp.gain,t);amp.gain.linearRampToValueAtTime(0,t+0.03);
       slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop(t+0.04)}catch(e){}}))},
     glide(c){slots.forEach(s=>s.glide(c))},
     release(fast){if(v.dead)return;v.dead=true;const t=AC.currentTime;const rr=fast||REL;
-      amp.gain.cancelScheduledValues(t);
-      amp.gain.setValueAtTime(Math.max(amp.gain.value,0.0001),t);
-      amp.gain.exponentialRampToValueAtTime(0.0001,t+rr);
+      holdGain(amp.gain,t);
+      amp.gain.setTargetAtTime(0,t,rr/9.2);   /* same curve as the old exponential ramp to -80 dB over rr, but it starts from wherever the level really is */
       slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop(t+rr+0.05)}catch(e){}}))   /* audio-clock stop: silent CPU ends on time even if the cleanup timer below is throttled */
       setTimeout(()=>{if(!v.gone){v.gone=true;soundingVoices.delete(v);soundingOscs-=nOsc}
         /* also unhook each oscillator from the shared vibrato/modulation buses -- those links used to stay forever */
-        slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop()}catch(e){}try{amtGain.disconnect(o.detune)}catch(e){}
-          if(opts&&opts.mod){try{opts.mod.disconnect(o.detune)}catch(e){}}try{o.disconnect()}catch(e){}}));
-        amp.disconnect();filt.disconnect()},rr*1000+200)}};
+        slots.forEach(s=>s.oscs.forEach(o=>{try{o.stop()}catch(e){}detUnlink(amtGain,o);
+          if(opts&&opts.mod)detUnlink(opts.mod,o);try{o.disconnect()}catch(e){}}));
+        slots.forEach(s=>{try{s.sg.disconnect()}catch(e){}});amp.disconnect();filt.disconnect();},rr*1000+200)}};
   const peak=level/Math.sqrt(midis.length);
   amp.gain.setValueAtTime(0,t);
   amp.gain.linearRampToValueAtTime(peak,t+ATK);
@@ -2774,6 +2793,7 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
   }
   constructor() {
     super();
+    this.fadeIn = 0;   /* v0.29: see process() */
     this.y1 = 0; this.y2 = 0; this.y3 = 0; this.y4 = 0;
     this.heard = false; this.idle = 0; this.rng = 22222; this.lastCut = -1; this.lastRes = -1; this.g = 0; this.k = 0;
   }
@@ -2836,7 +2856,11 @@ class LumeFilterProcessor extends AudioWorkletProcessor {
       /* v2: gain compensation moved to the OUTPUT. Scaling the input by (1+k) before tanh overdrove
          the nonlinearity (~7x on Poly), and that clipping aliased into a harsh hiss/whistle. The
          filtered output is soft-limited instead, which also caps self-oscillation level. */
-      let fb = Math.tanh(x + seed - k * y4);
+      /* v0.29: a new filter comes alive on the audio thread a few ms after its note's oscillators have
+         started, so its first sample used to be a jump into the middle of a waveform - a small pop at every
+         note start (measured). Fading the input in over the first ~6 ms makes that entry smooth. */
+      const xi = this.fadeIn < 256 ? x * (++this.fadeIn) / 256 : x;
+      let fb = Math.tanh(xi + seed - k * y4);
       y1 += g * (fb - y1);
       y2 += g * (y1 - y2);
       y3 += g * (y2 - y3);
@@ -4320,12 +4344,11 @@ function plateStrings(side){
   }
   return out;
 }
-const plateVoices=[];
+const plateVoices=[],plateRing=[],PLATE_RING_MAX=LITE?20:32;
 function duckChord(){
   if(!AC||!heldChord)return;
   const g=volCurve(knobs.chordVol),t=AC.currentTime;
-  chordBus.gain.cancelScheduledValues(t);
-  chordBus.gain.setValueAtTime(chordBus.gain.value,t);
+  holdGain(chordBus.gain,t);   /* v0.29: was cancel + setValueAtTime(.value) - a tiny level jump on the held chord at every right-ribbon strike */
   chordBus.gain.setTargetAtTime(g*0.68,t,0.02);
   chordBus.gain.setTargetAtTime(g,t+0.1,0.12);
 }
@@ -4346,6 +4369,13 @@ function plateTrigger(side,midi,vel,dir){
     plateVoices.push(sv);
   }
   while(plateVoices.length>(LITE?24:12)){plateVoices.shift().release(LITE?0.3:undefined)}
+  /* v0.29: the cap above only counts strings still held; every struck string also rings out for its tail, so a
+     hard strum stacked dozens of ringing strings and the audio thread fell behind ("audio lag"). Ringing ribbon
+     strings now share a ceiling too: past it, the oldest one fades out in 30 ms (it's buried under the newer
+     strikes anyway). */
+  plateRing.push(v);if(plateVoices[plateVoices.length-1]!==v)plateRing.push(plateVoices[plateVoices.length-1]);
+  for(let i=plateRing.length-1;i>=0;i--)if(plateRing[i].gone)plateRing.splice(i,1);
+  while(plateRing.length>PLATE_RING_MAX){const o=plateRing.shift();if(o.kill)o.kill();else o.release(0.05)}
   if(side==='R')duckChord();
   const mk=side==='L'?'plateL':'plateR',tk=mk+midi;
   mOn(mk,midi,vel*up);

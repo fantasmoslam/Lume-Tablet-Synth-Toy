@@ -2,7 +2,7 @@
 /* LUME service worker: precache the shell, network-first for navigations (so a fresh
    index.html always wins when you're online), cache-first for static assets.
    Bump VERSION when shipping a new build; the page reloads itself on controllerchange. */
-const VERSION = "lume-v28";
+const VERSION = "lume-v29";
 const PRECACHE = [
   "./",
   "./index.html",
