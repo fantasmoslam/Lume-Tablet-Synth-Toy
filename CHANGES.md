@@ -69,3 +69,31 @@ idle 9.4x -> 21.5x, chord + 6 notes held 5.1x -> 8.8x, 40-string strum 6.1x -> 8
   no drums in the last 8 s, not frozen) and their tail has died away. Turning a send up, a drum hit, sparkle
   or FREEZE wakes them before any sound reaches them.
 - Measured (offline, best of 3) vs v0.27b: idle 10.2x -> 34.2x, chord + 6 notes 5.5x -> 13.4x realtime.
+
+# LUME v0.31-matrix (experimental, based on v0.30)
+
+## Drum matrix replaces the step sequencer
+- The strip under the tab bar is now a 4-track x 16-step drum grid, two bars long (32 steps).
+  Each row has its own sound (KICK, SNARE, C-HAT, O-HAT by default), so there are no lanes to switch.
+- Steps have three levels: off, ghost (soft) and accent (loud).
+- Touch: tap = accent on/off, press and hold = ghost, drag = paint along the row you started on
+  (starting on a lit pad erases). Right-click / Shift-click also make ghosts on a computer.
+- Row names: tap to hear, press and hold to swap the sound (kick, 808, snare, clap, rim, closed hat,
+  open hat, tom, bell). A closed hat chokes a ringing open hat.
+- Left strip: REC / PLAY / CLR, PRESET (beat library with AUTO BPM), SWING (0-75%), BAR 1 / BAR 2,
+  FOLLOW (view tracks the playing bar) and CPY (bar 1 -> bar 2).
+- CLR reads UNDO for four seconds after wiping.
+- REC + PLAY: tapping a row name records a hit on the nearest 16th (QUANT off / micro-timing comes later).
+- Preset library: 10 new two-bar grooves plus the 14 older beats as "Classics".
+- Swing now shows MPC-style numbers: 58% pushes each off-16th about 0.29 of a step late.
+
+## Removed on this branch
+- Chord step-sequencing (the CH lane, chord progressions library and chord REC/overdub).
+
+## Fixes
+- Moving the tempo or swing slider while playing no longer pushes the next step a whole step later
+  on every slider tick.
+
+## Saving
+- The bank saves under a new key (lume-dm-bank). On first run it imports a v0.30 bank, turning each
+  16-step beat into two identical bars. The v0.30 bank itself is left untouched.

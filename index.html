@@ -893,6 +893,87 @@ body[data-skin="genesis"] #deck .dval,body[data-skin="retro"] #deck .dval,body[d
    Transport while the deck is down lives in the pill bar: PLAY/STOP, TAP,
    +/- tempo; the Bank tab holds clear/record. */
 .synth.deck-open .transport,.synth.deck-open .pad{visibility:hidden}
+/* ============ v0.31 drum matrix: replaces the 16 step pads + transport ============ */
+#dmx{display:flex;gap:6px;align-items:stretch;z-index:3;
+  --dm-bez:#1A1A1A;--dm-off:#3A2626;--dm-off2:#332121;--dm-ghost:#B84A14;--dm-acc1:#FF7A1A;--dm-acc2:#FF2A2A;--dm-glow:rgba(255,85,0,.75);--dm-ink:#C9C4B8;--dm-amber:#FFB000}
+.synth.deck-open #dmx{visibility:hidden}
+#dmx .dmb{position:relative;border:0;border-radius:7px;background:linear-gradient(#2C2E35,#17181C);color:var(--dm-ink);
+  font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.08em;cursor:pointer;padding:0;touch-action:manipulation;
+  box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12),inset 0 -4px 6px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;gap:6px}
+#dmx .dmb:active{transform:translateY(1px)}
+#dmx .dmb i,#dmPresetPop .dmb i{width:6px;height:6px;border-radius:50%;background:#3A3C44;flex:none}
+#dmx .dmb.on{color:var(--dm-amber)}
+#dmx .dmb.on i,#dmPresetPop .dmb.on i{background:var(--dm-amber);box-shadow:0 0 7px var(--dm-amber)}
+#dmx .dm-rec i{background:#5A1A16}
+#dmx .dm-rec.on{color:#FF5A4A}
+#dmx .dm-rec.on i{background:#FF3B30;box-shadow:0 0 8px #FF3B30}
+#dmx .dmb.undo{color:#16181c;background:linear-gradient(#FFC21A,#E89500)}
+#dmx .dm-tr{width:60px;display:flex;flex-direction:column;gap:4px}
+#dmx .dm-tr .dmb{flex:1}
+#dmx .dm-ctl{width:150px;display:flex;flex-direction:column;gap:4px}
+#dmx .dm-lcd{position:relative;display:block;border:0;border-radius:6px;background:#0B0C0A;padding:3px 8px;text-align:left;cursor:pointer;
+  box-shadow:inset 0 0 0 1.5px #000,inset 0 2px 6px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.06);font-family:var(--font);color:var(--dm-amber);overflow:hidden}
+#dmx .dm-lcd small{display:block;font-size:8.5px;letter-spacing:.16em;color:rgba(255,176,0,.55);font-weight:700}
+#dmx .dm-lcd b{display:block;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 6px rgba(255,176,0,.45)}
+#dmx .dm-pre{height:34px;touch-action:manipulation}
+#dmx .dm-pre.on{box-shadow:inset 0 0 0 1.5px var(--dm-amber),inset 0 2px 6px rgba(0,0,0,.8)}
+#dmx .dm-sw{height:36px;cursor:default}
+#dmx .dm-sw small{display:inline}
+#dmx .dm-sw b{position:absolute;right:8px;top:2px;font-size:12px}
+#dmx .dm-sw input{position:absolute;left:6px;right:6px;bottom:2px;width:calc(100% - 12px);height:18px;margin:0;-webkit-appearance:none;appearance:none;background:transparent;touch-action:none}
+#dmx .dm-sw input::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,176,0,.25)}
+#dmx .dm-sw input::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:14px;margin-top:-5px;border-radius:4px;background:linear-gradient(#FFC21A,#E89500);box-shadow:0 0 6px rgba(255,176,0,.6)}
+#dmx .dm-sw input::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,176,0,.25)}
+#dmx .dm-sw input::-moz-range-thumb{width:22px;height:14px;border:0;border-radius:4px;background:#FFB000}
+#dmx .dm-bars{flex:1;display:flex;gap:4px}
+#dmx .dm-bars .dmb{flex:1}
+#dmx .dm-bars .dmb.on{color:#16181c;background:linear-gradient(#FFC21A,#E89500)}
+#dmx #dmBar1.has:not(.on)::after{content:"";position:absolute;right:5px;top:5px;width:5px;height:5px;border-radius:50%;background:var(--dm-amber);opacity:.7}
+#dmx .dm-ctl2{width:62px;display:flex;flex-direction:column;gap:4px}
+#dmx .dm-ctl2 .dmb{flex:1;flex-direction:column;gap:3px}
+#dmx .dm-ctl2 .dmb small{font-size:9px;letter-spacing:.04em;opacity:.7}
+#dmx .dm-labs{width:76px;display:grid;grid-template-rows:repeat(4,1fr);gap:3px}
+#dmx .dm-lab{position:relative;border:0;border-radius:5px;padding:0 0 0 7px;text-align:left;cursor:pointer;touch-action:none;
+  background:linear-gradient(#26282f,#141519);color:var(--dm-ink);font-family:var(--font);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -3px 5px rgba(0,0,0,.55)}
+#dmx .dm-lab b{font-size:11px;font-weight:800;letter-spacing:.06em}
+#dmx .dm-lab span{position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:9px;opacity:.45}
+#dmx .dm-lab.flash{animation:dmhit .16s ease-out}
+@keyframes dmhit{from{color:#fff;background:linear-gradient(#5A3A20,#2A1A10)}to{}}
+#dmx .dmb.flash{animation:dmhit .4s ease-out}
+#dmx .dm-grid{flex:1;display:grid;grid-template-rows:repeat(4,1fr);column-gap:4px;row-gap:3px;padding:4px 6px;border-radius:8px;background:var(--dm-bez);touch-action:none;
+  box-shadow:inset 0 0 0 1.5px #000,inset 0 3px 8px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.07)}
+#dmx .dm-div{width:1px;justify-self:center;background:rgba(255,176,0,.18)}
+#dmx .dm-c{display:block;border-radius:4px;background:var(--dm-off);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -2px 3px rgba(0,0,0,.45);transition:background .06s}
+#dmx .dm-c.alt{background:var(--dm-off2)}
+#dmx .dm-c.v1{background:var(--dm-ghost);box-shadow:inset 0 1px 0 rgba(255,220,180,.25),0 0 5px rgba(184,74,20,.45)}
+#dmx .dm-c.v2{background:linear-gradient(var(--dm-acc1),var(--dm-acc2));box-shadow:inset 0 1px 0 rgba(255,240,220,.6),0 0 9px var(--dm-glow)}
+#dmx .dm-c.ph{box-shadow:inset 0 0 0 2px rgba(255,236,200,.95)}
+#dmx .dm-c.ph:not(.v1):not(.v2){background:#5C4434}
+#dmx .dm-c.ph.v1,#dmx .dm-c.ph.v2{filter:brightness(1.35)}
+/* other skins: lit pads take the skin's own pad colours */
+body[data-skin]:not([data-skin="lyra"]) #dmx{--dm-acc1:var(--pad-top);--dm-acc2:var(--pad-bot)}
+body[data-skin]:not([data-skin="lyra"]) #dmx .dm-c.v1{background:linear-gradient(var(--pad-top),var(--pad-bot));opacity:.55}
+body[data-skin]:not([data-skin="lyra"]) #dmx .dm-c.v1.ph{opacity:.8}
+/* the PRESET pop-up sits over the panels above the strip */
+#dmPresetPop{display:none;position:absolute;left:92px;top:24px;width:820px;max-height:296px;z-index:60;flex-direction:column;
+  background:#121317;border-radius:12px;box-shadow:0 0 0 1.5px #000,0 0 0 3px #33353C,0 18px 40px rgba(0,0,0,.6);padding:10px 12px 12px;color:#EDE8DA;font-family:var(--font)}
+#dmPresetPop.open{display:flex}
+#dmPresetPop .dmp-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+#dmPresetPop .dmp-head b{font-size:13px;letter-spacing:.16em;color:#FFB000}
+#dmPresetPop .dmp-head span{flex:1;font-size:11.5px;color:#8B867A}
+#dmPresetPop .dmb{border:0;border-radius:7px;height:32px;padding:0 12px;background:linear-gradient(#2C2E35,#17181C);color:#C9C4B8;font-family:var(--font);font-size:11px;font-weight:800;letter-spacing:.08em;display:flex;align-items:center;gap:6px;cursor:pointer;
+  box-shadow:0 2px 0 rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12)}
+#dmPresetPop .dmb.on{color:#FFB000}
+#dmPresetPop .dmp-x{width:36px;justify-content:center;padding:0}
+#dmPresetPop .dmp-list{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+#dmPresetPop .pcat{margin:6px 0 5px}
+#dmPresetPop .prow2,#beatgrid .prow2{display:flex;flex-wrap:wrap;gap:6px}
+#dmPresetPop [data-preset],#beatgrid [data-preset]{border:1px solid #4A4C55;border-radius:7px;background:#1d1f24;color:#EDE8DA;font-family:var(--font);font-size:13px;padding:8px 11px;min-height:38px;cursor:pointer}
+#dmPresetPop [data-preset] small,#beatgrid [data-preset] small{margin-left:7px;font-size:10.5px;color:#8B867A}
+#dmPresetPop [data-preset].on{border-color:#FFB000;color:#FFB000}
+#beatgrid{display:block}
+
 .dtab{border:0;background:linear-gradient(#34363D,#18191D);color:#B9B4A6;
   font-family:var(--font);font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -4px 7px rgba(0,0,0,.55);touch-action:manipulation;transition:color .08s,background .08s}
@@ -1639,11 +1720,7 @@ body.stage-mode .top{filter:brightness(.92)}
     <button class="gear" id="gearR" aria-label="right ribbon settings"></button>
   </div>
 
-  <button class="transport rec" data-action="rec"   style="--x:96px">REC</button>
-  <button class="transport" data-action="play"  style="--x:160px">PLAY</button>
-  <button class="transport" data-action="clear" style="--x:224px">CLR</button>
-  <button class="transport" data-action="lane"  style="--x:288px"><div class="lanetxt" id="laneTxt">CH</div></button>
-  <button class="pad mark" data-pad="0" style="--x:352px"></button><button class="pad" data-pad="1" style="--x:416px"></button><button class="pad" data-pad="2" style="--x:480px"></button><button class="pad" data-pad="3" style="--x:544px"></button><button class="pad mark" data-pad="4" style="--x:608px"></button><button class="pad" data-pad="5" style="--x:672px"></button><button class="pad" data-pad="6" style="--x:736px"></button><button class="pad" data-pad="7" style="--x:800px"></button><button class="pad mark" data-pad="8" style="--x:864px"></button><button class="pad" data-pad="9" style="--x:928px"></button><button class="pad" data-pad="10" style="--x:992px"></button><button class="pad" data-pad="11" style="--x:1056px"></button><button class="pad mark" data-pad="12" style="--x:1120px"></button><button class="pad" data-pad="13" style="--x:1184px"></button><button class="pad" data-pad="14" style="--x:1248px"></button><button class="pad" data-pad="15" style="--x:1312px"></button>
+  <div id="dmx" style="--x:92px;--y:325px;--w:1276px;--h:109px"></div>
 
   <section class="plate chords" style="--x:96px">
     <button class="key white" data-deg="0" style="--x:14px;--y:98px;--w:144px;--h:180px"><span class="k">I</span><small>ROOT MAJ</small></button>
@@ -1669,14 +1746,12 @@ body.stage-mode .top{filter:brightness(.92)}
 <div id="globalpanes" hidden>
     <div id="tab-patterns" class="impane">
       <div class="songrow bkrow"><label>Backup</label><button type="button" id="bkExport">Export</button><button type="button" id="bkImport">Import</button><input type="file" id="bkFile" accept=".json,application/json" hidden><span class="mnote" id="bkMsg">one file with all your banks, slots, sounds, DX7 voices and settings; import replaces what's on this device</span></div>
-      <p class="mnote"><b>Beats</b> load the drum lane only, so your chords stay untouched. <b>Progressions</b> load the chord lane only, so your beat stays running. Tap to play instantly, in whatever key you've selected.</p>
+      <p class="mnote"><b>Beats</b> load a two-bar drum pattern into the matrix and start it playing. The same list is on the <b>PRESET</b> button beside the grid.</p>
       <div class="pcat">My bank · autosaved on this device · cycle live slots with the pill's Slot key</div>
       <div id="banklist"></div>
-      <div class="songrow"><label>Song order</label><input id="songIn" maxlength="12" placeholder="e.g. AABC"><span class="mnote">type A–D; plays those slots, one bar each, looping · empty = just the current slot</span></div>
-      <div class="pcat">Beats · pure drums, load into the beat lane</div>
+      <div class="songrow"><label>Song order</label><input id="songIn" maxlength="12" placeholder="e.g. AABC"><span class="mnote">type A–D; plays those slots, one pattern (two bars) each, looping · empty = just the current slot</span></div>
+      <div class="pcat">Beats · two-bar drum patterns</div>
       <div id="beatgrid"></div>
-      <div class="pcat">Progressions · load into the chord lane</div>
-      <div id="patgrid"></div>
     </div>
     <div id="tab-look" class="impane"></div>
     <div id="tab-midi" class="impane"></div>
@@ -1687,8 +1762,8 @@ body.stage-mode .top{filter:brightness(.92)}
         <li><span>Tap a chord on the <b>left bank</b>. It latches and stays lit; tap it again to let go.</span></li>
         <li><span>Swipe the <b>right ribbon</b> up or down to strum it. With no chord held it strums the last chord you played (or the I chord). Faster swipes are louder and tighter.</span></li>
         <li><span>Play the <b>right bank</b> for single notes, and sweep the <b>left ribbon</b> for a melody over them.</span></li>
-        <li><span>Press <b>PLAY</b> (or <kbd>T</kbd>) for the beat, then tap the sixteen <b>step pads</b> to write chord steps.</span></li>
-        <li><span>Tap a <b>tab</b> above the step pads — CHORD, MELODY, SPACE and the rest — to shape a sound without leaving the keys. Every tab has a <b>MORE</b> button that opens the full sheet.</span></li></ol></div>
+        <li><span>Press <b>PLAY</b> (or <kbd>T</kbd>) for the beat, then tap the <b>drum grid</b> to add hits, or pick a beat from <b>PRESET</b>.</span></li>
+        <li><span>Tap a <b>tab</b> above the drum grid — CHORD, MELODY, SPACE and the rest — to shape a sound without leaving the keys. Every tab has a <b>MORE</b> button that opens the full sheet.</span></li></ol></div>
       <div class="map"><svg class="mapsvg" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Layout of the instrument">
 <rect x="0.5" y="0.5" width="299" height="199" rx="9" fill="#E9E2D0" stroke="#8B867A"/>
 <rect x="5" y="34" width="14" height="120" rx="3" fill="#15161A" stroke="#FF5A1F" stroke-width="1"/>
@@ -1722,8 +1797,8 @@ body.stage-mode .top{filter:brightness(.92)}
 <circle cx="288" cy="166" r="5" fill="#FFB000" stroke="#111"/><text x="288" y="168.7" stroke="none">8</text></g></svg><div class="legend">
 <div><span class="n">1</span><span><b>Top pill</b> — tempo, arp rate and voicing, the display, four level/filter knobs and six buttons.</span></div>
 <div><span class="n">2</span><span><b>Master &amp; output row</b> — the Drone switch, the Space/Filter/Drive/Volume knobs, the tape recorder and the output meter.</span></div>
-<div><span class="n">3</span><span><b>Stage panels</b> — the tab strip above the step pads: pick an instrument and its controls drop into the sequencer's strip while the keys stay playable.</span></div>
-<div><span class="n">4</span><span><b>Transport &amp; step pads</b> — REC, PLAY, CLR and the lane key, then sixteen steps.</span></div>
+<div><span class="n">3</span><span><b>Stage panels</b> — the tab strip above the drum grid: pick an instrument and its controls drop into the sequencer's strip while the keys stay playable.</span></div>
+<div><span class="n">4</span><span><b>Drum grid</b> — REC, PLAY, CLR, the preset, swing and bar keys, then four drum rows of sixteen steps.</span></div>
 <div><span class="n">5</span><span><b>Chord bank</b> — seven chords of the key; they latch.</span></div>
 <div><span class="n">6</span><span><b>Note bank</b> — seven notes of the scale; momentary unless HOLD.</span></div>
 <div><span class="n">7</span><span><b>Left ribbon</b> — melody over the notes.</span></div>
@@ -1732,9 +1807,9 @@ body.stage-mode .top{filter:brightness(.92)}
       <div class="mtools"><button type="button" id="mExpand">Expand all</button><button type="button" id="mCollapse">Collapse all</button></div>
       <details class="ms"><summary>Playing the key banks</summary><div class="mb"><p>The two key banks are the heart of the instrument, and both are always in your chosen key and scale.</p><ul><li><b>Chords</b> latch like Omnichord buttons: tap to hold (the key stays lit), tap again to release. With the <b>Chords HOLD</b> switch off — the switch beside the CHORD tab, and its light — a chord sounds only while your finger is down.</li><li><b>Notes</b> are momentary unless the <b>Notes HOLD</b> switch (beside the MELODY tab) or the <kbd>H</kbd> key turns hold on. Both stay in step. Turning hold off releases held notes only; the drone and chord keep playing.</li><li><b>Octave:</b> every instrument has its own octave, from −3 to +3, set with <b>− / +</b> on its panel (OCTAVE) or in its sheet. On a keyboard, <kbd>,</kbd> and <kbd>.</kbd> shift the note bank.</li><li><b>Strum / slide:</b> a quick swipe across a bank plays every key it crosses, in order, in either direction; a slow drag does not retrigger, so you can move a finger with care. Each bank's sheet has a <b>Slide</b> control with three settings: <b>Strum</b> (the default), <b>Off</b> (one finger plays one key, and several fingers work at once) and <b>Glide</b> (every key your finger touches plays, however slowly).</li><li><b>Voicing:</b> the pill's <b>Voicing</b> key cycles the chords through Triad → 7th → 9th → Sus4. <b>All Off</b> silences everything that is sounding (notes, chords, drone, ribbons, keyboard, theremin) and re-centres the pitch bend. <b>Arp Hold</b> keeps the arpeggiator running on the last chord after you let go.</li></ul></div></details>
       <details class="ms"><summary>The ribbons</summary><div class="mb"><p>Tap a ribbon for one harp strike. Height is pitch across four octaves, snapped to the scale on the left ribbon, or to the latched chord on the right.</p><ul><li><b>Sweep</b> up or down for a glissando; sweep speed sets your velocity and how tight the strum is.</li><li><b>Damper:</b> touch the bottom of the ribbon, or use a second finger, to kill the tail. The chord itself keeps playing.</li><li><b>Settings:</b> open the <b>Rib L</b> or <b>Rib R</b> tab (or that tab's <b>MORE</b>). Each ribbon has its own voice, <b>Level</b>, <b>Tone</b>, <b>Tail</b>, <b>Sub</b> and <b>Vibrato</b>, plus presets, octave, envelope and effects like any other instrument.</li><li><b>Sideways &amp; Dwell:</b> in a ribbon's sheet, choose what a sideways slide and a still hold do — <b>Off</b>, <b>Filter</b>, <b>Pitch</b>, <b>Shimmer</b>, <b>Reverb</b> or <b>Echo</b>. Dwell swells while your finger rests and drains when you move. <b>Touch</b> sets how far each reaches.</li><li><b>Two hands:</b> with both ribbons down, the higher hand brightens and the lower darkens — a subtle split on top of each side's own Tone.</li></ul></div></details>
-      <details class="ms"><summary>The stage panels (the tab strip)</summary><div class="mb"><p>Above the step pads is a strip of tabs. Tapping one drops that instrument's controls into the sequencer's strip while the key banks, ribbons and master knobs stay fully playable — so shaping a sound never costs you the ability to play.</p><ul><li>The tabs, left to right: <b>RIB·L · MELODY · DRONE · SEQ · PADS · SPACE · THEREMIN · CHORD · RIB·R</b>.</li><li>Tap a tab to open its panel; tap it again (or the ✕ at either corner) to close. <b>SEQ</b> returns to the sequencer strip.</li><li>Each panel ends in <b>MORE</b>, which opens the full sheet — the same tab in the big dialog — where every control lives.</li><li>They are <b>crossed on purpose</b>: the melody (right-hand) instrument's controls sit on the left side, and the chord (left-hand) instrument's controls on the right, so the hand that is playing never has to leave its bank — the same logic as the crossed ribbons.</li><li>The tab labels move with you: each shows its instrument's current voice, so you always know what you are about to shape.</li></ul></div></details>
+      <details class="ms"><summary>The stage panels (the tab strip)</summary><div class="mb"><p>Above the drum grid is a strip of tabs. Tapping one drops that instrument's controls into the sequencer's strip while the key banks, ribbons and master knobs stay fully playable — so shaping a sound never costs you the ability to play.</p><ul><li>The tabs, left to right: <b>RIB·L · MELODY · DRONE · SEQ · PADS · SPACE · THEREMIN · CHORD · RIB·R</b>.</li><li>Tap a tab to open its panel; tap it again (or the ✕ at either corner) to close. <b>SEQ</b> returns to the sequencer strip.</li><li>Each panel ends in <b>MORE</b>, which opens the full sheet — the same tab in the big dialog — where every control lives.</li><li>They are <b>crossed on purpose</b>: the melody (right-hand) instrument's controls sit on the left side, and the chord (left-hand) instrument's controls on the right, so the hand that is playing never has to leave its bank — the same logic as the crossed ribbons.</li><li>The tab labels move with you: each shows its instrument's current voice, so you always know what you are about to shape.</li></ul></div></details>
       <details class="ms"><summary>LFO (movement) and the Theremin panel</summary><div class="mb"><p>Every bank and ribbon panel has an <b>LFO ▸</b> button, captioned MOVEMENT. Its light pulses at the LFO's speed and it shows the rate and target, or OFF. Tap it for the LFO page: <b>RATE</b> (one sweep every 20 seconds up to vibrato speed), <b>DEPTH</b> (0 = off), <b>TARGET</b> (filter, pitch or pan) and <b>SHAPE</b> (sine, triangle, square, saw). <b>◂ SOUND</b> goes back. The Theremin panel shows what it hears (<b>NOW PLAYING</b>) and adds <b>RANGE</b> (how far one hand-sweep bends), <b>GLIDE</b> (smoother vs. snappier tracking), <b>LEVEL</b>, <b>ECHO</b>, <b>OCTAVE</b>, and <b>IN KEY</b>, which snaps the pitch to your key's notes. Every panel button has a caption underneath, and tapping the open tab (✕) closes its panel.</p></div></details>
-      <details class="ms"><summary>Playing live</summary><div class="mb"><p>The <b>performance module</b> (beside DRONE) has four switches. <b>FX OFF</b> mutes the echo and reverb returns for a dry moment. <b>FREEZE</b> holds the current reverb and echo tails while new playing stays dry; tap again to let go. <b>UNDO</b> steps back through your last sound changes (knobs, voices, effects), up to 30, and shows how many are waiting. <b>LOCK</b>: hold it for half a second to lock; hold again to unlock. While locked, the menus, sheet, tab strip panels, tempo, voicing, step pads and recorder ignore taps (LOCK flashes to remind you), but the key banks, ribbons, master knobs, ARP, ARP HOLD, SLOT, PLAY, the HOLD switches, DRONE and ALL OFF all stay live.</p><p><b>Slots</b>: while the sequencer plays, a slot change waits for the next bar, and the SLOT button blinks with where it's going (Slot A→C). Tap SLOT for the next one; <b>hold SLOT</b> to pick A, B, C or D directly. In Bank you can choose whether the tempo jumps or glides to the new slot over one bar. The four lights under the LUME display count the beats (red on the downbeat).</p><p><b>Mix</b>: <b>LOW CUT</b> on the master row trims rumble and mud for the room (it stays put when you change slots). The echo and reverb returns always have a gentle low cut. A limiter sits just before the output; the meter's <b>LIMIT</b> light turns amber when it catches peaks and red at the ceiling.</p><p><b>Count-in</b> (Bank → Start): PLAY gives one bar of clicks first, with the beat lights counting in white; tap PLAY again to cancel. The tape recorder counts in too, or, if the sequencer is already running, starts exactly on the next bar. <b>Stage mode</b> (Look → Performance) turns the body dark for dark stages and brightens the display and lights.</p><p><b>Backup</b> (top of the Bank tab): <b>Export</b> saves one file with everything Lume keeps on this device: banks, slots, sounds, DX7 voices and settings. <b>Import</b> restores it here or on another device (it replaces what's there, then Lume restarts). Export before clearing browser data or reinstalling.</p><p><b>MIDI</b>: set <b>Clock in</b> to Follow and Lume takes its tempo, PLAY and STOP from the connected device or DAW. Program Change 1–4 selects slots A–D.</p></div></details>
+      <details class="ms"><summary>Playing live</summary><div class="mb"><p>The <b>performance module</b> (beside DRONE) has four switches. <b>FX OFF</b> mutes the echo and reverb returns for a dry moment. <b>FREEZE</b> holds the current reverb and echo tails while new playing stays dry; tap again to let go. <b>UNDO</b> steps back through your last sound changes (knobs, voices, effects), up to 30, and shows how many are waiting. <b>LOCK</b>: hold it for half a second to lock; hold again to unlock. While locked, the menus, sheet, tab strip panels, tempo, voicing, drum grid and recorder ignore taps (LOCK flashes to remind you), but the key banks, ribbons, master knobs, ARP, ARP HOLD, SLOT, PLAY, the HOLD switches, DRONE and ALL OFF all stay live.</p><p><b>Slots</b>: while the sequencer plays, a slot change waits for the next bar, and the SLOT button blinks with where it's going (Slot A→C). Tap SLOT for the next one; <b>hold SLOT</b> to pick A, B, C or D directly. In Bank you can choose whether the tempo jumps or glides to the new slot over one bar. The four lights under the LUME display count the beats (red on the downbeat).</p><p><b>Mix</b>: <b>LOW CUT</b> on the master row trims rumble and mud for the room (it stays put when you change slots). The echo and reverb returns always have a gentle low cut. A limiter sits just before the output; the meter's <b>LIMIT</b> light turns amber when it catches peaks and red at the ceiling.</p><p><b>Count-in</b> (Bank → Start): PLAY gives one bar of clicks first, with the beat lights counting in white; tap PLAY again to cancel. The tape recorder counts in too, or, if the sequencer is already running, starts exactly on the next bar. <b>Stage mode</b> (Look → Performance) turns the body dark for dark stages and brightens the display and lights.</p><p><b>Backup</b> (top of the Bank tab): <b>Export</b> saves one file with everything Lume keeps on this device: banks, slots, sounds, DX7 voices and settings. <b>Import</b> restores it here or on another device (it replaces what's there, then Lume restarts). Export before clearing browser data or reinstalling.</p><p><b>MIDI</b>: set <b>Clock in</b> to Follow and Lume takes its tempo, PLAY and STOP from the connected device or DAW. Program Change 1–4 selects slots A–D.</p></div></details>
       <details class="ms"><summary>The sheet (MORE)</summary><div class="mb"><p>Every panel's <b>MORE</b> button opens the sheet: the full settings for that instrument. Its tabs follow the tab strip's order, with <b>Bank</b>, <b>MIDI</b>, <b>Look</b> and <b>Manual</b> set apart on the right. Each instrument's settings sit in labelled wells (Preset &amp; Play, LFO, Envelope, Filter &amp; Effects, Voice), using the same knobs as the panels; drag a knob up or down, and its value shows underneath. The <b>Global</b> strip holds the key and scale for the whole instrument. The voice library scrolls, and <b>DX7</b> marks the FM voices. <b>PLAY BANKS</b> shrinks the sheet so both key banks stay playable underneath while you tweak; tap it again for the full sheet. ✕ closes it.</p></div></details>
       
       <details class="ms"><summary>ENV, glide and touch dynamics</summary><div class="mb"><p>The Melody and Chord panels have an <b>ENV ▸</b> page: <b>ATTACK</b>, <b>DECAY</b>, <b>SUSTAIN</b> and <b>RELEASE</b>, drawn live as a shape. <b>SOURCE</b> switches between the voice's own envelope (VOICE) and yours (CUSTOM); turning any envelope knob switches to CUSTOM. <b>VELOCITY</b> sets how much touch matters: the key banks read how hard you land (finger contact size, S Pen pressure, or a MIDI controller's velocity), and at 0 every note plays the same. On the melody, <b>GLIDE</b> slides each new note up or down from the last one (OFF at 0). The LFO page's <b>SYNC</b> locks its speed to the tempo, from 4 bars down to 1/16. Double-tap any knob to return it to its default.</p></div></details>
@@ -1743,11 +1818,11 @@ body.stage-mode .top{filter:brightness(.92)}
       <details class="ms"><summary>The arpeggiator</summary><div class="mb"><p>The arp plays the notes of the chord you are holding, one after another. Turn it on with the pill's <b>Arp</b> key or <kbd>G</kbd>, and set its speed with <b>Rate −</b> and <b>Rate +</b>. The full controls sit at the top of the <b>Chord</b> sheet.</p><ul><li><b>Arp:</b> on or off, the same as the pill key.</li><li><b>Hold:</b> keeps arpeggiating the last chord after you let go, so both hands are free.</li><li><b>Sync:</b> locks the rate to the tempo, so 1/16 always means a sixteenth note. Turn it off for fixed speeds.</li><li><b>Rate:</b> 1/8, 1/8 triplet, 1/16, 1/16 triplet or 1/32.</li><li><b>Pattern:</b> Up, Down, Up-Dn or Random. <b>Octaves:</b> 1–4. <b>Gate:</b> how long each note sounds, from short and detached to fully connected.</li></ul></div></details>
       <details class="ms"><summary>The drone</summary><div class="mb"><p>The drone is a second, independent sustained chord that layers underneath normal play. Start and stop it with the <b>Drone</b> switch near the top of the instrument (its LED lights and shows the chord it holds), the <b>DRONE</b> tab, or the readout in the display. Keep tapping other chords, latch and release them, even change key — the drone plays on underneath until you stop it.</p><ul><li><b>Voicing:</b> Chord, Fifths, Octaves or Sus2. <b>Follow chords</b> makes the drone track whatever chord you are playing.</li><li><b>Tone &amp; motion:</b> Sub octave, Tone, Breath, Breath rate, Warble and Pulse (with a division from 1/2 to 1/16).</li><li><b>Air:</b> Wind and Crackle — a slow noise bed and sparse vinyl dust.</li><li><b>Grain:</b> a filtered-noise bed (Level and Tone). <b>Sparkle:</b> sparse bell-like events (Rate, Level and Ring length), always sent generously to the delay and reverb so they trail off into the distance. Grain and Sparkle stop when the drone does.</li><li>A fresh drone with no modulation set yet gets a gentle default movement and texture, so it is alive from the first note rather than sitting static.</li></ul></div></details>
       <details class="ms"><summary>Space: shimmer reverb &amp; tape echo</summary><div class="mb"><p>Open the <b>Space</b> tab for the shared ambience every instrument sends to, and use the <b>Space</b> master knob up top for a quick hand on the reverb.</p><ul><li><b>Shimmer:</b> on/off and <b>Amount</b> — a pitch-shifted layer inside the reverb that feeds back an octave up on every pass.</li><li><b>Reverb:</b> Decay, Tone and Mix — a long, smooth plate built from a feedback delay network.</li><li><b>Tape echo:</b> Level, Time and Repeats — a pitch-warped delay with wow and flutter.</li><li><b>Tape hiss:</b> the faint analog noise floor. <b>Reset</b> returns the whole Space section to its defaults.</li></ul></div></details>
-      <details class="ms"><summary>The sequencer</summary><div class="mb"><p>Two lanes run on one clock. Any beat works with any progression, with your own playing on top.</p><h4>Chord lane</h4><ul><li>With <b>REC</b> lit and the sequencer stopped, chord taps <i>sketch</i> steps.</li><li>While it plays, right-ribbon strums are <i>overdubbed</i> with their real velocity and direction.</li><li>On a step pad, a short tap fills it with the last chord or clears it. A long press ties it for 1, 2 or 4 sixteenths. A ↓ marks a down-strum, and a dim pad is soft.</li><li><b>CLR</b> wipes this lane only.</li></ul><h4>Beat lane</h4><ul><li>The <b>lane key</b> beside CLR cycles what the sixteen pads edit: <b>CH</b> (chords), then <b>K</b> kick, <b>S</b> snare, <b>H</b> hat and <b>R</b> rim. The same picker is on the <b>Rib R</b> tab.</li><li>Each pad has four tiny LEDs (kick, snare, hat, rim). Amber means that drum hits there, and a white outline marks the track you are editing.</li><li>With a drum lane selected, tapping a pad toggles that hit and plays a preview.</li><li>The <b>Rib R</b> tab also has <b>Clr beat</b> (wipe the kit), <b>Beat off</b> (mute drums, chords keep playing), <b>Tap</b> tempo and the chord morph buttons.</li></ul><h4>Tempo &amp; feel</h4><ul><li><b>Tempo</b> runs 30–240, <b>swing</b> 0–60% and <b>human</b> 0–100% (a little timing and velocity jitter so a programmed pattern does not sound machine-quantised). Swing, human and lane live on the <b>Rib R</b> tab.</li><li>In the pill, use <b>−</b> and <b>+</b> for one BPM at a time (hold to speed up), <b>drag the number</b> up or down, or <b>tap the number</b> to type an exact BPM on a keypad.</li><li><b>TAP</b> averages your last nine taps and ignores stray ones. Tap a rough tempo, then fine-tune with − and +.</li></ul></div></details>
+      <details class="ms"><summary>The drum grid</summary><div class="mb"><p>Four drum rows, sixteen steps each, two bars long. Each row has its own sound, so there is nothing to switch between.</p><h4>Writing a beat</h4><ul><li><b>Tap</b> a pad to add a loud hit (bright). Tap it again to clear it.</li><li><b>Press and hold</b> a pad for a soft ghost note (dim orange).</li><li><b>Drag</b> along a row to paint hits, which is quick for hi-hat runs. Starting the drag on a lit pad erases instead. Your finger stays on the row it started on.</li><li>On a computer, right-click or Shift-click also makes a ghost note.</li></ul><h4>Sounds</h4><ul><li><b>Tap a row name</b> (KICK, SNARE, C-HAT, O-HAT) to hear it.</li><li><b>Press and hold</b> a row name to swap that row's sound: kick, 808, snare, clap, rim, closed hat, open hat, tom or bell.</li><li>A closed hat cuts off a ringing open hat, like a real kit.</li></ul><h4>Two bars</h4><ul><li><b>BAR 1</b> and <b>BAR 2</b> pick which bar the grid shows. A small dot on BAR 2 means it has hits.</li><li><b>FOLLOW</b> (on by default) flips the view to whichever bar is playing. Picking a bar yourself while it plays turns FOLLOW off.</li><li><b>CPY</b> copies bar 1 into bar 2, so you can make a small change for the second bar.</li></ul><h4>Presets, swing and the rest</h4><ul><li><b>PRESET</b> opens the beat library: tap one to load it and play. <b>AUTO BPM</b> in that list sets each beat's own tempo; turn it off to keep yours.</li><li><b>SWING</b> pushes every second 16th later. 0% is straight; around 50–65% is a classic MPC-style shuffle. Each preset sets its own swing.</li><li><b>CLR</b> wipes the pattern. For four seconds afterwards it reads <b>UNDO</b>, so a slip is one tap to fix.</li><li><b>REC</b>: while REC is lit and the beat plays, tapping a row name writes a hit on the nearest 16th.</li><li>The <b>Rib R</b> tab still has tempo, swing, <b>human</b> (a little timing and velocity looseness), <b>Beat off</b> and <b>Tap</b> tempo.</li><li>In the pill, use <b>−</b> and <b>+</b> for one BPM at a time (hold to speed up), <b>drag the number</b> up or down, or <b>tap the number</b> to type an exact BPM.</li></ul></div></details>
       <details class="ms"><summary>The PAD bank</summary><div class="mb"><p>Open the <b>PADS</b> tab for a bank of thirty assignable pads — two rows of fifteen — across four pages (<b>A–D</b>), so 120 in all. They sit in the sequencer's strip while the keys stay live.</p><ul><li>Tap a pad to play it. Chords and notes sound for as long as you hold the pad, just like keys; drums fire a hit.</li><li>Press <b>EDIT</b>, then tap a pad to assign it: choose its <b>type</b> (Chord, Note, Drum or Off), then the chord degree, the note and octave, or the drum — and optionally a <b>voice</b> from the whole library. Changes apply and sound at once.</li><li><b>PAGE</b> cycles A–D; the four dots show where you are. Pads are remembered on this device.</li></ul></div></details>
       <details class="ms"><summary>Recording</summary><div class="mb"><p>The recorder is the tape deck on the left of the master row. Press the red button to record everything reaching the speakers (including Space), and press it again to stop.</p><ul><li>The <b>tape window</b> draws your take as it is captured, and zooms out when the window fills.</li><li>Transport: <b>⏮</b> back to start, <b>▶</b> play/pause, <b>⟲</b> loop and <b>⤓</b> download.</li><li><b>Tap</b> the tape to jump there and play, or <b>drag</b> it to scrub with sound, like rocking a tape past the head.</li><li>Short and medium takes download as a universally openable <b>WAV</b>; takes over ten minutes stay compressed, to keep the device happy.</li></ul></div></details>
       <details class="ms"><summary>The output section</summary><div class="mb"><ul><li><b>Volume</b>, <b>Filter</b>, <b>Drive</b> and <b>Space</b> are master knobs across the top of the instrument: overall level, a resonant master filter sweep, overall grit, and overall reverb amount. The display's first line opens Key, Scale and master Volume as well.</li><li>The <b>output meter</b> beside them is a true stereo peak meter of what actually leaves Lume, after every effect and the safety limiter — fast bars, a white peak-hold tick, and a numeric dB readout of the loudest moment in the last second or so.</li><li>The <b>PEAK</b> light goes amber when the limiter is gently working and red at the ceiling. Tap it to reset the holds.</li></ul></div></details>
-      <details class="ms"><summary>Bank &amp; songs</summary><div class="mb"><ul><li>Four slots <b>A–D</b>, each holding a complete setup: chord steps, drum kit, tempo, swing and the sound. The pill's <b>Slot</b> key cycles them live, mid-beat, like flipping a stompbox preset.</li><li>The <b>Bank</b> tab — which the pill's <b>Menu</b> button opens — shows all four: <i>go</i> switches, <i>copy</i> duplicates into the next slot, ✕ wipes. It also holds the pattern libraries: <b>Beats</b> load the drum lane only and <b>Progressions</b> load the chord lane only, so the other lane stays untouched.</li><li>Everything you edit is autosaved on this device. Because the sound is part of a slot, switching slots recalls its patch too.</li><li>Type a <b>Song order</b> like <b>AABC</b> and PLAY walks those slots, one bar each, looping.</li></ul></div></details>
+      <details class="ms"><summary>Bank &amp; songs</summary><div class="mb"><ul><li>Four slots <b>A–D</b>, each holding a complete setup: the two-bar drum pattern and its row sounds, tempo, swing and the sound. The pill's <b>Slot</b> key cycles them live, mid-beat, like flipping a stompbox preset.</li><li>The <b>Bank</b> tab — which the pill's <b>Menu</b> button opens — shows all four: <i>go</i> switches, <i>copy</i> duplicates into the next slot, ✕ wipes. It also holds the <b>Beats</b> library (the same list as the grid's PRESET button).</li><li>Everything you edit is autosaved on this device. Because the sound is part of a slot, switching slots recalls its patch too.</li><li>Type a <b>Song order</b> like <b>AABC</b> and PLAY walks those slots, one two-bar pattern each, looping.</li></ul></div></details>
       <details class="ms"><summary>MIDI</summary><div class="mb"><p>Open the <b>MIDI</b> tab to choose the output, set a channel for each part, and turn clock and start/stop on or off. Lume needs a browser with Web MIDI (Chrome does; iOS Safari does not).</p><table class="mt"><tr><th>Part</th><th>Default</th><th>Sends</th></tr><tr><td>Chords</td><td>ch 1</td><td>notes, velocity 96</td></tr><tr><td>Notes</td><td>ch 2</td><td>notes, pitch bend ±2 st</td></tr><tr><td>Arp</td><td>ch 3</td><td>notes</td></tr><tr><td>Left ribbon</td><td>ch 4</td><td>harp notes</td></tr><tr><td>Right ribbon</td><td>ch 5</td><td>strummed notes</td></tr><tr><td>Drums</td><td>ch 10</td><td>K 36 · S 38 · rim 37 · hats 42 / 46</td></tr></table><ul><li>Levels go out as <b>CC7</b> on each part's channel (the NT VOL and CH VOL knobs, and each ribbon's Level). Each instrument's <b>Filter</b> goes out as <b>CC74</b>.</li><li><b>MIDI clock</b> (24 ppqn) and <b>Start / Stop</b> are sent while the sequencer plays.</li><li><b>Input:</b> play Lume from a controller. A lower octave plays the chord bank and a higher one plays the note bank, both already in the current key and scale. <b>Learn</b> maps a specific button to a specific key, and a controller's switches or faders can be mapped to the level and filter knobs.</li><li><b>Panic</b> releases every note Lume has sent. Changing key or scale, closing the page and unplugging a device do the same.</li></ul></div></details>
       <details class="ms"><summary>Theremin (camera)</summary><div class="mb"><p>Lume can play the drone hands-free from your webcam, theremin-style. Open the <b>Theremin</b> tab and press <b>ON</b> — only that switch touches the camera, so a stray tap cannot trigger a permission prompt.</p><ul><li><b>An open hand starts the drone; a fist stops it.</b> A little hysteresis keeps it from flickering at the threshold.</li><li><b>Hand distance</b> from the camera bends the drone's pitch, up to an octave either way.</li><li><b>Hand height</b> sets the chord bank's filter.</li><li>Choose the theremin's own <b>voice</b>, <b>Reso</b> and <b>Reverb</b> here. Lume snapshots the chord patch when you start, forces a clean theremin baseline, and puts your patch back when you stop.</li></ul><p class="mnote">The hand tracker is loaded from the network the first time you switch the theremin on, so its first use needs a connection.</p></div></details>
       <details class="ms"><summary>The display</summary><div class="mb"><h4>Text lines</h4><ol class="lines"><li>Key, scale, any moved octaves and the MIDI link. Tap this line (▾) for the quick key picker: a small piano for the key and six scale buttons. It changes as you tap, the drone follows, and you can play the banks while it is open.</li><li>What is running: drone, arp, sequence and BPM (READY when nothing is).</li><li>Current chord (with 7, 9 or sus suffix) and the notes you are holding.</li><li>Bend, the last strum velocity and morph.</li></ol><h4>Dot-matrix wordmark</h4><p>LUME stays lit for a few seconds after power-on, then its dots fade out one by one and a resting animation takes over — drifting particles, rain, twinkling stars or a slow wave. It is picked at random each start and changes every minute or two.</p><p>Everything you play moves it: a chord sends a ripple, a strum a sweep, a note a rising blip and a drum hit a scatter of sparks. Devices set to reduce motion keep the static wordmark.</p></div></details>
@@ -3795,7 +3870,6 @@ function chordSet(idx){
   const cv=velNow(),cvel=Math.max(1,Math.round(cv*127));state.lastVel=cvel;
   heldChord={idx,d:idx,voice:makeVoice(midis,chordBus,vibChordAmt,0.5*velGain('chord',cv),0,[1,1,1,0,0],{T:zoneVoice.chord,inst:'chord',mod:modMix.chord,vel:cvel})};
   revoice();lastDeg=idx;DM.fx('ripple');droneFollowChord(idx);
-  if(seq.rec&&!seq.playing)seqWriteStep(idx,90,1);
   paint();
 }
 function setNoteHold(v){state.latch=!!v;
@@ -3876,17 +3950,20 @@ function arpSet(on){
 }
 
 
-/* ============================ sequencer V2 ============================ */
-const SEQ_LEN=16;
-let pads=[];
-/* step = {deg, vel, dir, len, sh} */
-const seq={steps:new Array(SEQ_LEN).fill(null),rec:false,playing:false,cur:-1,step:-1,w:0,timer:null,hold:0,name:null,
-           lane:'chord',beatOn:true,beatName:null,owned:null};
-/* the beat lane: its own 16-step drum sequencer, independent of chords */
-const drum={K:new Array(SEQ_LEN).fill(0),S:new Array(SEQ_LEN).fill(0),H:new Array(SEQ_LEN).fill(0),R:new Array(SEQ_LEN).fill(0)};
-const DRUM_VOICES=['K','S','H','R'];
-function drumCount(i){return DRUM_VOICES.reduce((a,v)=>a+(drum[v][i]?1:0),0)}
-let seqBpm=92,seqSwing=0.14;
+/* ============================ drum matrix sequencer (v0.31 experimental) ============================
+   4 tracks x 32 steps (2 bars of 16ths). A step holds 0 (off), 1 (ghost) or 2 (accent).
+   Chord step-sequencing was removed on this branch: the strip is drums only. */
+const SEQ_LEN=32,DM_TRACKS=4,VEL_GHOST=0.45;
+const DM_DEF_VOICES=['kick','snare','chat','ohat'];
+const dmGridNew=()=>Array.from({length:DM_TRACKS},()=>new Array(SEQ_LEN).fill(0));
+const dmCopy=o=>({grid:o.grid.map(r=>r.slice()),voices:o.voices.slice()});
+const dm={grid:dmGridNew(),voices:DM_DEF_VOICES.slice(),page:0,follow:true,autoBpm:true};
+try{const p=JSON.parse(localStorage.getItem('lume-dm-prefs')||'null');if(p){dm.follow=p.follow!==false;dm.autoBpm=p.autoBpm!==false}}catch(e){}
+function dmPrefsSave(){try{localStorage.setItem('lume-dm-prefs',JSON.stringify({follow:dm.follow,autoBpm:dm.autoBpm}))}catch(e){}}
+const seq={rec:false,playing:false,step:-1,timer:null,base:0,due:0,name:null,beatOn:true,beatName:null,owned:null,skip:null};
+let seqBpm=92,seqSwing=0.14;   /* seqSwing = how late each off-16th lands, as a fraction of a 16th (0-0.375).
+   The SWING control shows it x200, so 58% = 0.29 of a 16th: a classic MPC-style shuffle. */
+const swingPct=()=>Math.round(seqSwing*200);
 function stepDur(){return 60/seqBpm/4}   /* 16th-note grid */
 
 
@@ -3899,119 +3976,80 @@ function makeNoise(){
   const len=AC.sampleRate*0.5;noiseBuf=AC.createBuffer(1,len,AC.sampleRate);
   const d=noiseBuf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
 }
-function percHit(c,velMul){
+/* drum voices, all synthesized: name -> [label, GM drum note for MIDI out] */
+const DV={kick:['KICK',36],b808:['808',35],snare:['SNARE',38],clap:['CLAP',39],rim:['RIM',37],chat:['C-HAT',42],ohat:['O-HAT',46],tom:['TOM',45],bell:['BELL',56]};
+const DV_ORDER=['kick','b808','snare','clap','rim','chat','ohat','tom','bell'];
+let ohatV=null;   /* the ringing open hat, so a closed hat can choke it like a real kit */
+function midiDrumV(v,vel){if(!midiOutActive())return;const n=DV[v][1];mOn('drums',n,Math.max(1,Math.min(127,Math.round(vel*115))));setTimeout(()=>mOff('drums',n),70)}
+function drumVoice(v,vel){
+  if(!DV[v])return;
   lastPercAt=performance.now();fxSleepCheck();   /* v0.30: drums always send to the reverb - wake it first */
-  velMul=velMul||1;
-  midiDrum(c);
-  if(!AC)return;
+  vel=vel==null?1:vel;
+  midiDrumV(v,vel);
+  if(!AC||!percBus||!noiseBuf)return;
   const t=AC.currentTime;
-  if(c==='K'||c==='k'){
-    const o=AC.createOscillator(),g=AC.createGain();
-    o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(42,t+.11);
-    g.gain.setValueAtTime((c==='K'?.85:.45)*velMul,t);g.gain.exponentialRampToValueAtTime(.001,t+.17);
-    o.connect(g);g.connect(percBus);o.start(t);o.stop(t+.2);
-  }else if(c==='S'||c==='s'||c==='r'){
-    const src=AC.createBufferSource();src.buffer=noiseBuf;
-    const f=AC.createBiquadFilter();f.type='bandpass';
-    f.frequency.value=c==='r'?2600:1800;f.Q.value=c==='r'?6:0.9;
-    const g=AC.createGain();
-    const lvl=(c==='S'?.4:c==='s'?.16:.22)*velMul,dur=c==='r'?.05:.12;
-    g.gain.setValueAtTime(lvl,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
-    src.connect(f);f.connect(g);g.connect(percBus);src.start(t);src.stop(t+dur+.05);
-  }else if(c==='h'||c==='H'){
-    const src=AC.createBufferSource();src.buffer=noiseBuf;
-    const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=7200;
-    const g=AC.createGain();const dur=c==='H'?.16:.04;
-    g.gain.setValueAtTime((c==='H'?.16:.12)*velMul,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
-    src.connect(f);f.connect(g);g.connect(percBus);src.start(t);src.stop(t+dur+.05);
+  const env=(g,peak,dur)=>{g.gain.setValueAtTime(peak,t);g.gain.exponentialRampToValueAtTime(.001,t+dur)};
+  const noise=(type,freq,q,peak,dur)=>{const s=AC.createBufferSource();s.buffer=noiseBuf;const f=AC.createBiquadFilter();f.type=type;f.frequency.value=freq;if(q)f.Q.value=q;
+    const g=AC.createGain();env(g,peak,dur);s.connect(f);f.connect(g);g.connect(percBus);s.start(t);s.stop(t+dur+.05);return g};
+  const tone=(type,f0,f1,fall,peak,dur)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1)o.frequency.exponentialRampToValueAtTime(f1,t+fall);
+    env(g,peak,dur);o.connect(g);g.connect(percBus);o.start(t);o.stop(t+dur+.03);return g};
+  switch(v){
+    case 'kick':tone('sine',160,42,.11,.85*vel,.17);break;
+    case 'b808':tone('sine',130,47,.07,.9*vel,.75);break;
+    case 'snare':noise('bandpass',1800,.9,.4*vel,.12);tone('triangle',190,150,.06,.16*vel,.07);break;
+    case 'clap':{const s=AC.createBufferSource();s.buffer=noiseBuf;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1150;f.Q.value=1.1;
+      const g=AC.createGain(),p=.42*vel;g.gain.setValueAtTime(.001,t);
+      [0,.011,.022].forEach(d=>{g.gain.setValueAtTime(p,t+d);g.gain.exponentialRampToValueAtTime(p*.15,t+d+.009)});
+      g.gain.setValueAtTime(p*.8,t+.033);g.gain.exponentialRampToValueAtTime(.001,t+.2);
+      s.connect(f);f.connect(g);g.connect(percBus);s.start(t);s.stop(t+.25);break}
+    case 'rim':noise('bandpass',2600,6,.22*vel,.05);tone('square',1700,0,0,.05*vel,.025);break;
+    case 'chat':
+      if(ohatV&&t-ohatV.t>.03){ohatV.g.gain.cancelScheduledValues(t);ohatV.g.gain.setTargetAtTime(0,t,.01)}
+      ohatV=null;noise('highpass',7200,0,.13*vel,.045);break;
+    case 'ohat':ohatV={g:noise('highpass',6800,0,.13*vel,.38),t};break;
+    case 'tom':tone('sine',200,118,.22,.6*vel,.32);break;
+    case 'bell':{const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=900;f.Q.value=1.6;const g=AC.createGain();env(g,.2*vel,.26);
+      [540,800].forEach(fr=>{const o=AC.createOscillator();o.type='square';o.frequency.value=fr;o.connect(f);o.start(t);o.stop(t+.3)});f.connect(g);g.connect(percBus);break}
   }
 }
+/* the PAD bank's kit still names drums by letter */
+const PERC_MAP={K:['kick',1],k:['kick',.53],S:['snare',1],s:['snare',.4],r:['rim',1],H:['ohat',1],h:['chat',1]};
+function percHit(c,velMul){const m=PERC_MAP[c];if(m)drumVoice(m[0],m[1]*(velMul||1))}
 function percAt(i){
-  if(!seq.beatOn)return;
-  const hit=(type)=>{const hd=humanDelayMs(),vm=humanVelMul();
-    if(hd>0.5)setTimeout(()=>percHit(type,vm),hd);else percHit(type,vm)};
-  if(drum.K[i])hit(i%8===0?'K':'k');
-  if(drum.S[i])hit('S');
-  if(drum.H[i])hit(i%8===6?'H':'h');
-  if(drum.R[i])hit('r');
-}
-function renderSeq(){
-  const cs=chords();
-  pads.forEach((p,i)=>{
-    const lbl=p.querySelector('.pl'),s=seq.steps[i];
-    p.querySelectorAll('.dleds i').forEach(d=>{
-      const v=d.dataset.v;
-      d.classList.toggle('on',!!drum[v][i]);
-      d.classList.toggle('edit',v===seq.lane);
-    });
-    if(seq.lane==='chord'){
-      lbl.textContent=s?cs[s.deg].label+(s.dir<0?'↓':'')+(s.len>1?'~'+s.len:''):'';
-      p.classList.toggle('set',!!s);
-      p.classList.toggle('dotted',false);
-      p.classList.toggle('soft',!!s&&s.vel<70);
-    }else{
-      lbl.textContent=drum[seq.lane][i]?seq.lane:'';
-      p.classList.toggle('set',!!drumCount(i));
-      p.classList.toggle('soft',!!drumCount(i)&&!drum[seq.lane][i]);
-    }
-    p.classList.toggle('lit',seq.playing&&(seq.lane==='chord'?i===seq.cur:i===seq.step));
-  });
-  document.querySelector('[data-action=rec]').classList.toggle('on',seq.rec);
-  document.querySelector('[data-action=play]').classList.toggle('on',seq.playing);
-}
-function strumStep(s){
-  const list=plateStrings('R');
-  if(!list.length)return;
-  const ord=s.dir<0?list.slice().reverse():list;
-  strumBurst('R',ord,s.vel||100,s.dir<0?11:16,s.dir);
-}
+  if(!seq.beatOn)return 0;let n=0;
+  for(let r=0;r<DM_TRACKS;r++){const s=dm.grid[r][i];if(!s)continue;n++;
+    if(seq.skip&&seq.skip.r===r&&seq.skip.i===i){seq.skip=null;continue}   /* recorded live just before this step: it already sounded */
+    const v=dm.voices[r],g=(s>=2?1:VEL_GHOST)*humanVelMul(),hd=humanDelayMs();
+    if(hd>0.5)setTimeout(()=>drumVoice(v,g),hd);else drumVoice(v,g)}
+  return n}
+function renderSeq(){dmRender()}
 function seqSchedule(){
   clearTimeout(seq.timer);
   if(!seq.playing)return;
   if(extClockLive())return;   /* v0.20: an external clock drives the steps */
   const nxt=(seq.step+1)%SEQ_LEN;
   const d=stepDur()*1000*(nxt%2===1?(1+seqSwing):(1-seqSwing));
-  /* aim at an absolute time so small timer lateness doesn't pile up (the old chain ran slow and drifted from MIDI clock) */
+  /* aim at an absolute time so small timer lateness doesn't pile up. v0.31: measured from when the
+     current step was due, so calling this again mid-step (tempo or swing moved) re-aims the same
+     step instead of pushing it a whole step later each time */
   const now=performance.now();
-  seq.due=(seq.due&&seq.due>now-250)?seq.due+d:now+d;
-  seq.timer=setTimeout(()=>{seqAdvance();seqSchedule()},Math.max(0,seq.due-now));
+  if(!(seq.base>now-250))seq.base=now;
+  seq.due=seq.base+d;
+  seq.timer=setTimeout(()=>{seq.base=seq.due;seqAdvance();seqSchedule()},Math.max(0,seq.due-now));
 }
 function seqAdvance(){
   seq.step=(seq.step+1)%SEQ_LEN;
-  if(seq.step===0&&recAtBar){const f=recAtBar;recAtBar=null;f()}
+  if(seq.step%16===0&&recAtBar){const f=recAtBar;recAtBar=null;f()}
   if(seq.step===0&&slotPending>=0){const i=slotPending;slotPending=-1;slotSwitchNow(i)}
   if(bpmGlide){bpmGlide.n++;const v=bpmGlide.from+(bpmGlide.to-bpmGlide.from)*Math.min(1,bpmGlide.n/SEQ_LEN);if(bpmGlide.n>=SEQ_LEN)bpmGlide=null;setBpm(v)}
-  beatLamp(seq.step);
+  beatLamp(seq.step%16);
   if(seq.step===0&&song.length>1){
     songPos=(songPos+1)%song.length;
     const idx=SLOTN.indexOf(song[songPos]);
     if(idx>=0&&idx!==activeSlot){slotSnapshot(activeSlot);activeSlot=idx;undoSkip=true;slotApply(idx,true);slotUI()}   /* live: no panic mid-song */
   }
-  if(seq.hold>0){seq.hold--}
-  else{
-    seq.cur=seq.step;
-    const s=seq.steps[seq.cur];
-    if(s){
-      if(!heldChord||heldChord.idx!==s.deg)chordSet(s.deg);
-      if(s.sh!=null&&s.sh!==state.shape){state.shape=s.sh;revoice()}
-      const hd=humanDelayMs(),hv=Math.max(1,Math.min(127,Math.round((s.vel||100)*humanVelMul())));
-      const doStrum=()=>strumStep(Object.assign({},s,{vel:hv}));
-      if(hd>0.5)setTimeout(doStrum,hd);else doStrum();
-      seq.owned=s.deg;
-      seq.hold=(s.len||1)-1;
-    }else{
-      /* empty step: only silence a chord the sequencer itself played, never the user's */
-      if(seq.owned!==null&&heldChord&&heldChord.idx===seq.owned)chordSet(null);
-      seq.owned=null;
-    }
-  }
-  percAt(seq.step);if(drumCount(seq.step)>0)DM.fx('spark');
-  renderSeq();
-}
-function seqWriteStep(deg,vel,dir){
-  const i=seq.w%SEQ_LEN;
-  seq.steps[i]={deg,vel,dir,len:1};
-  seq.w++;renderSeq();saveSoon();
+  if(percAt(seq.step)>0)DM.fx('spark');
+  dmPlayhead();
 }
 function seqPlay(on){
   if(!on&&typeof countCancel==='function'&&countOn)countCancel();
@@ -4019,18 +4057,29 @@ function seqPlay(on){
   seq.playing=on;
   if(on){
     initAudio();AC.resume();
-    seq.rec=false;seq.cur=-1;seq.step=-1;seq.hold=0;seq.due=0;songPos=-1;   /* audit2: the first bar advances to song[0] - it used to skip straight to the 2nd slot */
+    seq.step=-1;seq.base=0;seq.due=0;seq.skip=null;songPos=-1;   /* audit2: the first bar advances to song[0] */
     clockStart();seqAdvance();seqSchedule();
   }else{
     clockStop();clearTimeout(seq.timer);seq.timer=null;beatLamp(-1);bpmGlide=null;
     if(slotPending>=0){const i=slotPending;slotPending=-1;setTimeout(()=>slotSwitchNow(i),0)}
-    if(seq.owned!==null&&heldChord&&heldChord.idx===seq.owned)chordSet(null);
-    seq.owned=null;seq.cur=-1;seq.step=-1;seq.hold=0;saveSoon();
+    seq.step=-1;saveSoon();
   }
-  renderSeq();
+  dmRender();
 }
-function seqToggleRec(){seq.rec=!seq.rec;if(seq.rec)seq.w=0;renderSeq()}   /* rec while stopped = sketch; rec while playing = overdub */
-function seqClear(){seqPlay(false);seq.steps.fill(null);seq.name=null;seq.w=0;renderSeq();saveSoon()}
+function seqToggleRec(){seq.rec=!seq.rec;dmRender()}   /* armed + playing: tapping a track name writes a hit on the nearest 16th */
+let dmUndoGrid=null,dmUndoT=null;
+function seqClear(){   /* CLR wipes the pattern; for 4 s the key reads UNDO and brings it back */
+  if(dmUndoGrid){dm.grid=dmUndoGrid;dmUndoGrid=null;clearTimeout(dmUndoT);dmRender();saveSoon();return}
+  if(!dm.grid.some(r=>r.some(Boolean)))return;
+  dmUndoGrid=dm.grid.map(r=>r.slice());dm.grid=dmGridNew();seq.beatName=null;
+  clearTimeout(dmUndoT);dmUndoT=setTimeout(()=>{dmUndoGrid=null;dmRender()},4000);
+  dmRender();lcd();saveSoon()}
+function dmRecordHit(r){
+  if(!seq.rec||!seq.playing||seq.step<0)return;
+  let i=seq.step;
+  const span=seq.due-seq.base,frac=span>0?(performance.now()-seq.base)/span:0;
+  if(frac>=0.5&&!extClockLive()){i=(i+1)%SEQ_LEN;seq.skip={r,i}}   /* closer to the next step: write it there, and don't play it twice */
+  dm.grid[r][i]=2;dmRender();saveSoon()}
 
 /* tap tempo */
 let taps=[];
@@ -4049,8 +4098,7 @@ function tapTempo(){
 /* ============================ pattern bank: slots A–D + song chaining + autosave ============================ */
 const SLOTN=['A','B','C','D'];
 let activeSlot=0,songPos=0,song='',saveT=null;
-const slots=SLOTN.map(n=>({name:n,steps:new Array(SEQ_LEN).fill(null),
-  drum:{K:new Array(SEQ_LEN).fill(0),S:new Array(SEQ_LEN).fill(0),H:new Array(SEQ_LEN).fill(0),R:new Array(SEQ_LEN).fill(0)},
+const slots=SLOTN.map(n=>({name:n,dm:{grid:dmGridNew(),voices:DM_DEF_VOICES.slice()},
   bpm:92,sw:0.14,human:0.2,sound:null}));
 /* the sound: instrument voices/FX, drone+shimmer, ribbon settings, key/scale, and the three
    master knobs -- everything that makes a slot sound like the idea it was when you left it,
@@ -4105,43 +4153,61 @@ function applySoundSnapshot(snd,live){
   saveInst();updateLabels();lcd();
 }
 function curName(){return [seq.beatName,seq.name].filter(Boolean).join(' + ')||null}
-function slotSnapshot(i){const s=slots[i];s.steps=seq.steps;s.drum={K:drum.K.slice(),S:drum.S.slice(),H:drum.H.slice(),R:drum.R.slice()};
+function dmSanitize(o){
+  if(!o||!Array.isArray(o.grid))return null;
+  const grid=dmGridNew();
+  for(let r=0;r<DM_TRACKS;r++){const src=o.grid[r];if(!Array.isArray(src))continue;
+    for(let i=0;i<SEQ_LEN;i++){const v=src[i]|0;grid[r][i]=v>=2?2:v>0?1:0}}
+  const voices=DM_DEF_VOICES.map((d,r)=>o.voices&&DV[o.voices[r]]?o.voices[r]:d);
+  return{grid,voices}}
+/* v0.30 and older kept four 16-step on/off lanes (K S H R) with accents fixed by position.
+   Carry them over: kick on 1 and 3 accented, the rest ghosted (as they used to sound); the hat
+   that used to open on the "and" of 2 and 4 goes to O-HAT; a rim lane takes over track 4. Bar 2 = bar 1. */
+function gridFrom16(d){
+  const g=dmGridNew(),has=a=>Array.isArray(a)&&a.some(Boolean),hasR=has(d.R);
+  for(let i=0;i<SEQ_LEN;i++){const j=i%16;
+    if(d.K&&d.K[j])g[0][i]=j%8===0?2:1;
+    if(d.S&&d.S[j])g[1][i]=2;
+    if(d.H&&d.H[j]){if(!hasR&&j%8===6)g[3][i]=1;else g[2][i]=2}
+    if(hasR&&d.R[j])g[3][i]=2}
+  return{grid:g,voices:['kick','snare','chat',hasR?'rim':'ohat']}}
+function slotSnapshot(i){const s=slots[i];s.dm=dmCopy(dm);
   s.bpm=seqBpm;s.sw=seqSwing;s.human=seqHumanize;s.sound=soundSnapshot();
   if(i===activeSlot&&curName())s.name=curName();else if(!s.name||s.name==='live')s.name=SLOTN[i];}
-function slotApply(i,live){const s=slots[i];seq.steps=s.steps;
-  drum.K=s.drum.K.slice();drum.S=s.drum.S.slice();drum.H=s.drum.H.slice();drum.R=s.drum.R.slice();
+function slotApply(i,live){const s=slots[i];
+  const c=dmCopy(s.dm);dm.grid=c.grid;dm.voices=c.voices;
   if(live&&TEMPO_GLIDE&&seq.playing&&s.bpm!==seqBpm)bpmGlide={from:seqBpm,to:s.bpm,n:0};else{seqBpm=s.bpm;bpmGlide=null}
   seqSwing=s.sw;seqHumanize=s.human??0.2;seq.owned=null;
   if(s.sound)applySoundSnapshot(s.sound,live);
-  const tp=document.querySelector('.ptempo'),sw=document.querySelector('.pswing'),rd=$('bpmRead');
-  if(tp)tp.value=s.bpm;if(sw)sw.value=Math.round(s.sw*100);if(rd)rd.textContent=s.bpm;
+  const tp=document.querySelector('.ptempo'),rd=$('bpmRead');
+  if(tp)tp.value=s.bpm;if(rd)rd.textContent=s.bpm;syncSwingUI();
   const hu=document.querySelector('.phuman');if(hu)hu.value=Math.round(seqHumanize*100);
-  const sb=document.getElementById('slotBtn');if(sb)sb.textContent='Slot '+SLOTN[activeSlot];}
+  const sb=document.getElementById('slotBtn');if(sb)sb.textContent='Slot '+SLOTN[activeSlot];
+  dmRender()}
 function slotGoto(i){   /* v0.20: while the sequencer plays, the change waits for the next downbeat */
   if(seq.playing){slotPending=i===activeSlot?-1:i;slotUI();return}
   slotPending=-1;slotSnapshot(activeSlot);activeSlot=i;undoSkip=true;slotApply(i,seq.playing||!!droneVoice);renderSeq();lcd();saveSoon();slotUI()}
 function slotDup(i){slotSnapshot(activeSlot);renderBank();}
 function slotCopyTo(i,t){const s=slots[i];
-  slots[t]={name:s.name,steps:s.steps.map(x=>x?{...x}:null),
-    drum:{K:s.drum.K.slice(),S:s.drum.S.slice(),H:s.drum.H.slice(),R:s.drum.R.slice()},bpm:s.bpm,sw:s.sw,human:s.human,
+  slots[t]={name:s.name,dm:dmCopy(s.dm),bpm:s.bpm,sw:s.sw,human:s.human,
     sound:s.sound?JSON.parse(JSON.stringify(s.sound)):null}}
-function slotWipe(i){slots[i]={name:SLOTN[i],steps:new Array(SEQ_LEN).fill(null),
-  drum:{K:new Array(SEQ_LEN).fill(0),S:new Array(SEQ_LEN).fill(0),H:new Array(SEQ_LEN).fill(0),R:new Array(SEQ_LEN).fill(0)},bpm:92,sw:0.14,human:0.2,sound:null};
+function slotWipe(i){slots[i]={name:SLOTN[i],dm:{grid:dmGridNew(),voices:DM_DEF_VOICES.slice()},bpm:92,sw:0.14,human:0.2,sound:null};
   if(i===activeSlot){seq.beatName=null;seq.name=null;slotApply(i);renderSeq();lcd()}
   saveSoon()}
 function saveSoon(){clearTimeout(saveT);saveT=setTimeout(saveBank,700)}
+/* v0.31: the matrix bank saves under its own key, so a v0.30 build on this device keeps its own bank */
+const BANK_KEY='lume-dm-bank';
 function saveBank(){
   try{slotSnapshot(activeSlot);
-    localStorage.setItem('crb-bank',JSON.stringify({v:2,slots:slots.map(s=>({name:s.name,steps:s.steps,drum:s.drum,bpm:s.bpm,sw:s.sw,human:s.human,sound:s.sound})),song,active:activeSlot}));
+    localStorage.setItem(BANK_KEY,JSON.stringify({v:3,slots:slots.map(s=>({name:s.name,dm:s.dm,bpm:s.bpm,sw:s.sw,human:s.human,sound:s.sound})),song,active:activeSlot}));
   }catch(e){}
 }
 function loadBank(){
-  try{const d=JSON.parse(localStorage.getItem('crb-bank'));
+  try{const d=JSON.parse(localStorage.getItem(BANK_KEY)||localStorage.getItem('crb-bank'));
     if(!d||!d.slots||d.slots.length!==SLOTN.length)return;
     d.slots.forEach((o,i)=>{const s=slots[i];
       if(o.name)s.name=o.name;
-      if(Array.isArray(o.steps)&&o.steps.length===SEQ_LEN)s.steps=o.steps;
-      if(o.drum)s.drum={K:(o.drum.K||[]).slice(0,SEQ_LEN),S:(o.drum.S||[]).slice(0,SEQ_LEN),H:(o.drum.H||[]).slice(0,SEQ_LEN),R:(o.drum.R||[]).slice(0,SEQ_LEN)};
+      const m=dmSanitize(o.dm)||(o.drum?gridFrom16(o.drum):null);if(m)s.dm=m;
       if(o.bpm)s.bpm=o.bpm;s.sw=o.sw||0;s.human=o.human??0.2;s.sound=o.sound||null});
     song=(d.song||'').toUpperCase().replace(/[^ABCD]/g,'').slice(0,12);
     activeSlot=d.active||0;slotApply(activeSlot);
@@ -4161,48 +4227,118 @@ function renderBank(){
 }
 
 
-/* ============================ preload library ============================ */
-const pNone='................',pPop='K.h.S.h.K.h.S.h.',pFour='K..hK..hK..hK..h',pSoft='K...h..sK...h..s',
-      pBalla='K.......K..s....',pLo='K..h.s.kK..h.s.h',pSway='K..hS.h.K..hS.h.',pBossa='K..r..HK..r..HK.',
-      pSkank='..h...S...h...S.',pFunk='K.h.kSh.K.h.kSh.',pMarc='K.S.K.S.K.S.K.S.',pTrip='K..h.S.h.kK..hSh',
-      pDisco='KhHhKhHhKhHhKhHh',pMotown='K..hS..hK..hS..h';
-function prog2steps(list){
-  const s=new Array(SEQ_LEN).fill(null);let i=0;
-  for(const e of list){
-    if(e[0]==='r'){i+=e[1];continue}
-    const[deg,len,vel=100,dir=1,sh=null]=e;
-    s[i]={deg,vel,dir,len,sh};i+=len}
-  return s;
-}
-/* events: [degree(0=I…6=VII in current scale), length in 16ths, velocity, strum dir, shape(0 triad .3 7th .6 9th .9 sus4)] · 'r'=rest */
-const PATTERNS=[
- {n:'Cloud Nine',c:'Dream',bpm:84,sw:14,maj:1,p:[[0,4,88,1,.3],[5,4,80,1,.3],[3,4,92,1,.3],[4,4,96,-1,null]],perc:pSway},
- {n:'Lullaby Tide',c:'Dream',bpm:70,sw:0,maj:1,p:[[0,8,70,1,.6],[5,8,64,-1,.6]],perc:pBalla},
- {n:'Faded Polaroid',c:'Dream',bpm:90,sw:18,maj:1,p:[[1,4,82,1,.3],[4,4,88,1,.3],[0,4,84,-1,.3],[3,4,90,1,null]],perc:pLo},
- {n:'Rainy Window',c:'Lo-fi',bpm:76,sw:30,maj:1,p:[[1,4,78,1,.3],[4,4,84,1,.6],[0,4,80,1,.3],[5,4,76,1,.3]],perc:pLo},
- {n:'Coffee Stain',c:'Lo-fi',bpm:72,sw:26,maj:0,p:[[0,8,74,1,.3],[4,4,70,1,.3],[5,4,72,-1,.3]],perc:pLo},
- {n:'Late Bus',c:'Lo-fi',bpm:88,sw:22,maj:0,p:[[0,4,80,1,.6],[5,4,76,1,.6],[3,4,78,-1,.3],[4,4,82,1,.3]],perc:pTrip},
- {n:'Deep Space Harbor',c:'Ambient',bpm:58,sw:0,maj:1,p:[[0,16,62,1,.6]],perc:pNone},
- {n:'Koan',c:'Ambient',bpm:54,sw:0,maj:1,p:[[0,8,58,1,.3],[3,8,56,-1,.9]],perc:pNone},
- {n:'Aurora Drift',c:'Ambient',bpm:64,sw:0,maj:0,p:[[0,8,60,1,.6],[5,8,58,1,.6]],perc:pNone},
- {n:'Midnight Drive',c:'Pop',bpm:112,sw:0,maj:1,p:[[0,4,100,1],[4,4,104,-1],[5,4,100,1],[3,4,106,-1]],perc:pPop},
- {n:'Soda Shop',c:'Pop',bpm:128,sw:0,maj:1,p:[[0,4,108,1],[5,4,104,-1],[3,4,108,1],[4,4,110,-1]],perc:pMotown},
- {n:'Neon Rush',c:'Pop',bpm:150,sw:0,maj:1,p:[[0,2,112,1],[0,2,104,-1],[4,2,112,1],[4,2,104,-1],[5,2,110,1],[5,2,102,-1],[3,2,112,1],[3,2,104,-1]],perc:pFour},
- {n:'Last Summer',c:'Pop',bpm:96,sw:12,maj:1,p:[[5,4,92,1,.3],[3,4,96,1,.3],[0,4,98,-1,.3],[4,4,94,1,.3]],perc:pSway},
- {n:'Candlelight',c:'Ballad',bpm:72,sw:0,maj:1,p:[[0,8,84,1],[3,8,80,1]],perc:pBalla},
- {n:'First Snow',c:'Ballad',bpm:68,sw:0,maj:1,p:[[0,4,78,1,.3],[5,4,74,1,.3],[3,4,76,-1,.3],[4,4,80,1,.6]],perc:pBalla},
- {n:'Bossa Dusk',c:'Latin',bpm:100,sw:0,maj:1,p:[[0,3,88,1,.3],[4,3,84,-1,.3],[5,4,86,1,.6],[3,6,90,1,.3]],perc:pBossa},
- {n:'Island Skank',c:'Latin',bpm:92,sw:0,maj:1,p:[[0,2,96,1],['r',2],[4,2,90,-1],['r',2],[0,2,96,1],['r',2],[3,2,92,-1],['r',2]],perc:pSkank},
- {n:'Funk Lantern',c:'Groove',bpm:105,sw:8,maj:1,p:[[0,4,100,1,.3],['r',2],[4,2,96,-1],[0,4,102,1,.3],['r',2],[3,2,98,-1]],perc:pFunk},
- {n:'Motorik',c:'Groove',bpm:118,sw:0,maj:0,p:[[0,8,96,1,.3],[6,8,98,-1,.3]],perc:pDisco},
- {n:'Silent Night',c:'Christmas',bpm:62,sw:0,maj:1,p:[[0,6,80,1],[3,2,76,1],[0,4,78,1],[4,4,82,1]],perc:pBalla},
- {n:'Jingle Strut',c:'Christmas',bpm:120,sw:10,maj:1,p:[[0,4,106,1],[0,4,98,-1],[3,4,104,1],[4,4,108,-1]],perc:pMarc},
- {n:'Deck the Halls',c:'Christmas',bpm:112,sw:0,maj:1,p:[[0,2,104,1],[0,2,100,-1],[3,2,102,1],[3,2,98,-1],[4,2,104,1],[4,2,100,-1],[0,2,106,1],[0,2,102,-1]],perc:pPop},
- {n:'We Three Kings',c:'Christmas',bpm:88,sw:0,maj:0,p:[[0,8,88,1,.9],[5,4,84,1,.3],[4,4,86,1]],perc:pSoft},
- {n:'Winter Sway',c:'Christmas',bpm:70,sw:20,maj:1,p:[[0,4,78,1,.3],[5,4,74,1,.3],[3,4,76,-1,.6],[4,4,80,1,.3]],perc:pSway},
-];
-/* --- drum-kit beats (own lane; 16 chars, 'x' = hit) --- */
-function bs(str){const a=new Array(SEQ_LEN).fill(0);for(let i=0;i<SEQ_LEN;i++)if(str[i]&&str[i]!=='.')a[i]=1;return a}
+/* ============================ preset beat library ============================
+   Rows: 0 kick, 1 snare, 2 closed hat, 3 open hat (unless "voices" says otherwise).
+   32 steps = bar 1 [0..15] + bar 2 [16..31]. 0 off, 1 ghost, 2 accent. swing is in SWING-dial %.
+   The open-hat rows are as Dylan specified them; the kick, snare and closed-hat rows were lost in
+   transit and were written for v0.31 to fit each groove's description. */
+const PRESET_PATTERNS = {
+  "Spaghetti Western (Gallop)": {
+    bpm: 132,
+    swing: 0,
+    grid: [
+      [2,0,0,0, 0,0,0,0, 2,0,1,0, 0,0,0,0,  2,0,0,0, 0,0,0,0, 2,0,1,0, 2,0,2,0],
+      [0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,0, 0,0,0,0, 2,1,2,2],
+      [1,1,2,0, 1,1,2,0, 1,1,2,0, 1,1,0,0,  1,1,2,0, 1,1,2,0, 1,1,2,0, 1,1,2,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,2,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,2]
+    ]
+  },
+  "Hip Hop (Classic)": {
+    bpm: 92,
+    swing: 35,
+    grid: [
+      [2,0,0,0, 0,0,2,0, 2,0,1,0, 0,0,0,0,  2,0,0,0, 0,0,2,0, 0,0,2,0, 0,1,0,0],
+      [0,0,0,0, 2,0,0,1, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0],
+      [2,0,1,0, 2,0,1,0, 2,0,1,0, 2,0,1,0,  2,0,1,0, 2,0,1,0, 2,0,1,0, 2,0,1,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,2,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,2]
+    ]
+  },
+  "Boom Bap (90s East Coast)": {
+    bpm: 88,
+    swing: 58,
+    grid: [
+      [2,0,0,0, 0,0,1,2, 0,0,2,0, 0,0,0,0,  2,0,0,0, 0,0,0,2, 0,0,2,0, 0,0,1,0],
+      [0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,1, 0,0,0,0, 2,0,0,0],
+      [2,0,2,0, 2,0,2,0, 2,0,2,0, 2,0,0,0,  2,0,2,0, 2,0,2,0, 2,0,2,0, 2,0,2,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,2,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,2]
+    ]
+  },
+  "Trap (Half-Time 808)": {
+    bpm: 140,
+    swing: 0,
+    voices: ["b808", "clap", "chat", "ohat"],
+    grid: [
+      [2,0,0,0, 0,0,0,0, 1,0,2,0, 0,0,0,0,  2,0,0,0, 0,0,0,2, 0,0,2,0, 0,0,0,0],
+      [0,0,0,0, 0,0,0,0, 2,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 2,0,0,0, 0,0,0,0],
+      [2,0,2,0, 2,0,0,0, 2,0,2,0, 2,1,2,1,  2,0,2,0, 2,0,0,0, 2,1,2,1, 2,1,0,0],
+      [0,0,0,0, 0,0,2,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,2,0, 0,0,0,0, 0,0,2,0]
+    ]
+  },
+  "Trip Hop (Bristol Downtempo)": {
+    bpm: 78,
+    swing: 45,
+    grid: [
+      [2,0,0,0, 0,0,2,0, 0,0,2,0, 0,0,0,0,  2,0,0,0, 0,0,2,0, 0,1,0,0, 2,0,0,0],
+      [0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0],
+      [1,0,2,0, 1,0,2,0, 1,0,2,0, 1,0,2,0,  1,0,2,0, 1,0,2,0, 1,0,2,0, 1,0,0,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,2,0]
+    ]
+  },
+  "Lo-Fi Chillhop": {
+    bpm: 76,
+    swing: 62,
+    grid: [
+      [2,0,0,0, 0,0,0,1, 2,0,0,0, 0,0,0,0,  2,0,0,0, 0,0,0,1, 0,0,2,0, 0,0,0,0],
+      [0,0,0,0, 2,0,0,1, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0],
+      [2,0,1,0, 2,0,1,0, 2,0,1,0, 2,0,0,0,  2,0,1,0, 2,0,1,0, 2,0,1,0, 2,0,1,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+    ]
+  },
+  "Ambient (Sparse Pulse)": {
+    bpm: 70,
+    swing: 15,
+    voices: ["kick", "rim", "chat", "ohat"],
+    grid: [
+      [2,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,  2,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0],
+      [0,0,0,0, 0,0,0,0, 2,0,0,0, 0,0,0,0,  0,0,0,0, 0,0,0,0, 2,0,0,0, 0,0,0,0],
+      [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0,  0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+    ]
+  },
+  "Deep House": {
+    bpm: 122,
+    swing: 25,
+    voices: ["kick", "clap", "chat", "ohat"],
+    grid: [
+      [2,0,0,0, 2,0,0,0, 2,0,0,0, 2,0,0,0,  2,0,0,0, 2,0,0,0, 2,0,0,0, 2,0,0,0],
+      [0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0],
+      [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0,  1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+      [0,0,2,0, 0,0,2,0, 0,0,2,0, 0,0,2,0,  0,0,2,0, 0,0,2,0, 0,0,2,0, 0,0,2,0]
+    ]
+  },
+  "UK Garage (2-Step)": {
+    bpm: 130,
+    swing: 54,
+    grid: [
+      [2,0,0,0, 0,0,0,0, 0,0,2,0, 0,0,0,0,  2,0,0,0, 0,0,0,1, 0,0,2,0, 0,0,0,0],
+      [0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0,  0,0,0,0, 2,0,0,0, 0,0,0,0, 2,0,0,0],
+      [0,0,0,0, 2,0,1,0, 0,0,0,0, 2,0,1,0,  0,0,0,0, 2,0,1,0, 0,0,0,0, 2,0,0,0],
+      [0,0,2,0, 0,0,0,0, 0,0,2,0, 0,0,0,0,  0,0,2,0, 0,0,0,0, 0,0,2,0, 0,0,2,0]
+    ]
+  },
+  "Drum 'n' Bass (Amen Break)": {
+    bpm: 172,
+    swing: 0,
+    grid: [
+      [2,0,2,0, 0,0,0,0, 0,0,2,2, 0,0,0,0,  2,0,2,0, 0,0,0,0, 0,0,2,0, 0,0,0,0],
+      [0,0,0,0, 2,0,0,1, 0,1,0,0, 2,0,0,1,  0,0,0,0, 2,0,0,1, 0,1,0,0, 0,0,2,0],
+      [2,0,2,0, 2,0,2,0, 2,0,2,0, 2,0,0,0,  2,0,2,0, 2,0,2,0, 2,0,2,0, 2,0,2,0],
+      [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,2,0,  0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,2]
+    ]
+  }
+};
+/* the older one-bar beats, still offered as "Classics" (written as 16 chars, 'x' = hit) */
+function bs(str){const a=new Array(16).fill(0);for(let i=0;i<16;i++)if(str[i]&&str[i]!=='.')a[i]=1;return a}
 const BEATS=[
  {n:'Standard 4/4',bpm:112,k:'x.......x.......',s:'....x.......x...',h:'x.x.x.x.x.x.x.x.'},
  {n:'Motown',bpm:126,k:'x..x..x...x.....',s:'....x.......x..x',h:'xxx.xxx.xxx.xx.x'},
@@ -4219,45 +4355,28 @@ const BEATS=[
  {n:'Disco Sixteen',bpm:118,k:'x...x...x...x...',h:'xxxxxxxxxxxxxxxx',s:'....x.......x...'},
  {n:'Jingle Beat',bpm:120,k:'x...x...x...x...',s:'....x.......x...',r:'..x.x..x..x.x..x'},
 ];
-function clearBeat(){DRUM_VOICES.forEach(v=>drum[v].fill(0));seq.beatName=null;renderSeq();saveSoon()}
-function loadBeat(b){
-  DRUM_VOICES.forEach(v=>{drum[v]=bs(b[v.toLowerCase()]||'')});
-  seqBpm=b.bpm;seqSwing=0;seq.beatOn=true;seq.beatName=b.n;
-  seq.lane='chord';
-  const tp=document.querySelector('.ptempo'),sw=document.querySelector('.pswing'),rd=$('bpmRead');
-  if(tp)tp.value=b.bpm;if(sw)sw.value=0;if(rd)rd.textContent=b.bpm;
-  if(!seq.playing)seqPlay(true);else seqSchedule();
-  if(window.syncLaneButtons)syncLaneButtons();
-  closeInstMenu();   /* 6b: the old help overlay is now a tab of the one panel */
-  lcd();saveSoon();
+const PRESET_LIST=[
+  ...Object.entries(PRESET_PATTERNS).map(([n,p])=>({n,g:'Grooves',bpm:p.bpm,swing:p.swing||0,grid:p.grid,voices:p.voices})),
+  ...BEATS.map(b=>{const c=gridFrom16({K:bs(b.k||''),S:bs(b.s||''),H:bs(b.h||''),R:bs(b.r||'')});return{n:b.n,g:'Classics',bpm:b.bpm,swing:0,grid:c.grid,voices:c.voices}})];
+function clearBeat(){dm.grid=dmGridNew();seq.beatName=null;renderSeq();lcd();saveSoon()}
+function loadPreset(p){
+  const m=dmSanitize({grid:p.grid,voices:p.voices||DM_DEF_VOICES});dm.grid=m.grid;dm.voices=m.voices;dmUndoGrid=null;
+  seqSwing=Math.max(0,Math.min(75,p.swing||0))/200;
+  if(dm.autoBpm)setBpm(p.bpm);
+  seq.beatOn=true;seq.beatName=p.n;dm.page=0;syncSwingUI();
+  const bk=document.querySelector('.beatkill');if(bk){bk.classList.remove('on');bk.textContent='Beat Off'}
+  if(!seq.playing)seqPlay(true);
+  closeInstMenu();dmPresetClose();
+  dmRender();lcd();saveSoon();
 }
-function syncLaneButtons(){
-  document.querySelectorAll('.lane').forEach(x=>x.classList.toggle('on',x.dataset.lane===seq.lane));
-  const lt=$('laneTxt');
-  if(lt)lt.textContent=seq.lane==='chord'?'CH':seq.lane;
-}
-function loadPattern(pt){  seq.steps=prog2steps(pt.p);
-  seqBpm=pt.bpm;seqSwing=pt.sw/100;
-  seq.name=pt.n;seq.rec=false;seq.lane='chord';
-  const want=pt.maj?'Major':'Minor';
-  if(state.scale!==want){state.scale=want;$('scale').value=want;panic();updateLabels()}
-  const tp=document.querySelector('.ptempo'),sw=document.querySelector('.pswing');
-  if(tp)tp.value=pt.bpm;if(sw)sw.value=pt.sw;
-  const rd=$('bpmRead');if(rd)rd.textContent=seqBpm;
-  seqPlay(true);
-  closeInstMenu();   /* 6b: the old help overlay is now a tab of the one panel */
-  lcd();saveSoon();
-}
+function presetButtons(){
+  const groups={};PRESET_LIST.forEach((p,i)=>{(groups[p.g]=groups[p.g]||[]).push([p,i])});
+  return Object.entries(groups).map(([g,arr])=>`<div class="pcat">${g}</div><div class="prow2">`+
+    arr.map(([p,i])=>`<button type="button" data-preset="${i}">${esc(p.n)}<small>${p.bpm}</small></button>`).join('')+'</div>').join('')}
 function renderPatterns(){
-  const g=$('patgrid'),b=$('beatgrid');if(!g||!b)return;
-  b.innerHTML=BEATS.map((x,i)=>`<button data-beat="${i}">${x.n}</button>`).join('');
-  const cats={};
-  PATTERNS.forEach((p,i)=>{(cats[p.c]=cats[p.c]||[]).push([p,i])});
-  g.innerHTML=Object.entries(cats).map(([c,arr])=>
-    `<div class="pcat">${c}</div><div class="prow2">`+
-    arr.map(([p,i])=>`<button data-pat="${i}">${p.n}</button>`).join('')+`</div>`).join('');
-  b.querySelectorAll('[data-beat]').forEach(x=>x.addEventListener('click',()=>loadBeat(BEATS[+x.dataset.beat])));
-  g.querySelectorAll('[data-pat]').forEach(x=>x.addEventListener('click',()=>loadPattern(PATTERNS[+x.dataset.pat])));
+  const b=$('beatgrid');if(!b)return;
+  b.innerHTML=presetButtons();
+  b.querySelectorAll('[data-preset]').forEach(x=>x.addEventListener('click',()=>loadPreset(PRESET_LIST[+x.dataset.preset])));
 }
 
 
@@ -4484,11 +4603,6 @@ function bindRibbon(side,el){  const strip=el.querySelector('.scale');
   const end=ev=>{
     if(ev.pointerId!==activeId)return;
     activeId=null;z.idx=-1;touchEnd(side);
-    /* overdub: a recorded strum writes its real velocity + direction into the next step */
-    if(side==='R'&&seq.rec&&z.gestN>0){
-      const d=heldChord?heldChord.idx:lastDeg;
-      if(d!==null)seqWriteStep(d,Math.max(45,z.gestVel||85),z.gestDir);
-    }
     hi.style.transition='opacity .5s ease-out';hi.style.opacity=0;
     paint();
   };
@@ -4670,10 +4784,8 @@ function makePanel(side){
     </div>
     ${side==='L'?'':`<div class="pcol pc4 psec">
       <label class="ifxl"><span style="min-width:56px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8B867A">Tempo</span><input type="range" class="ptempo" min="30" max="240" value="${seqBpm}"></label>
-      <label class="ifxl"><span style="min-width:56px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8B867A">Swing</span><input type="range" class="pswing" min="0" max="60" value="${Math.round(seqSwing*100)}"></label>
+      <label class="ifxl"><span style="min-width:56px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8B867A">Swing</span><input type="range" class="pswing" min="0" max="75" value="${swingPct()}"></label>
       <label class="ifxl"><span style="min-width:56px;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8B867A">Human</span><input type="range" class="phuman" min="0" max="100" value="${Math.round(seqHumanize*100)}"></label>
-      <div class="ifxrow"><label>Lane</label><span class="lcaread" id="laneRead">CHords</span></div>
-      <div class="ifxrow aseg"><button type="button" class="ibtn lane" data-lane="chord">CH</button><button type="button" class="ibtn lane" data-lane="K">Kick</button><button type="button" class="ibtn lane" data-lane="S">Snare</button><button type="button" class="ibtn lane" data-lane="H">Hat</button><button type="button" class="ibtn lane" data-lane="R">Rim</button></div>
       <div class="ifxrow aseg"><button type="button" class="ibtn clrbeat">Clr beat</button><button type="button" class="ibtn beatkill">Beat off</button><button type="button" class="ibtn ptap">Tap</button></div>
       <div class="ifxrow aseg"><button type="button" class="ibtn pmorph" data-m="0">Triad</button><button type="button" class="ibtn pmorph" data-m="0.3">7th</button><button type="button" class="ibtn pmorph" data-m="0.6">9th</button><button type="button" class="ibtn pmorph" data-m="0.9">Sus4</button></div>
     </div>`}`;
@@ -4694,15 +4806,11 @@ function makePanel(side){
   else{
     el.querySelector('.ptap').addEventListener('click',tapTempo);
     const tp=el.querySelector('.ptempo');
-    tp.oninput=()=>{seqBpm=+tp.value;const rd=$('bpmRead');if(rd)rd.textContent=seqBpm;seqSchedule();lcd()};
+    tp.oninput=()=>setBpm(tp.value);
     const sw=el.querySelector('.pswing');
-    sw.oninput=()=>{seqSwing=+sw.value/100;seqSchedule();lcd()};
+    sw.oninput=()=>{seqSwing=+sw.value/200;syncSwingUI();lcd();saveSoon()};
     const hu=el.querySelector('.phuman');
     hu.oninput=()=>{seqHumanize=+hu.value/100;saveSoon()};
-    el.querySelectorAll('.lane').forEach(lb=>lb.addEventListener('click',()=>{
-      seq.lane=lb.dataset.lane;syncLaneButtons();renderSeq();
-      const lr=$('laneRead');if(lr)lr.textContent=seq.lane==='chord'?'CHords':({K:'KICK',S:'SNARE',H:'HAT',R:'RIM'})[seq.lane];
-    }));
     el.querySelector('.clrbeat').addEventListener('click',clearBeat);
     const bk=el.querySelector('.beatkill');
     bk.addEventListener('click',()=>{seq.beatOn=!seq.beatOn;bk.classList.toggle('on',!seq.beatOn);bk.textContent=seq.beatOn?'Beat Off':'Beat On'});
@@ -6019,7 +6127,7 @@ function freezeApply(){if(!AC||!FREEZE)return;const t=AC.currentTime;
   if(dlyIn)dlyIn.gain.setTargetAtTime(0,t,0.03);if(dlyFb)dlyFb.gain.setTargetAtTime(0.8,t,0.05)}
 function setFreeze(on){FREEZE=!!on;fxSleepCheck();if(AC){if(FREEZE)freezeApply();else{const t=AC.currentTime;if(shimmerBus)shimmerBus.gain.setTargetAtTime(REV_IN_TRIM,t,0.05);if(dlyIn)dlyIn.gain.setTargetAtTime(1,t,0.05);applyReverb();applyEcho()}}perfSync()}
 /* ---- LOCK ---- */
-const LOCK_SEL='#fnbar,#deck,#instMenu,.pillkeys,#d-title,.transport,.pad,#recMod';
+const LOCK_SEL='#fnbar,#deck,#instMenu,.pillkeys,#d-title,.transport,.pad,#recMod,#dmx,#dmPresetPop';
 const LOCK_ALLOW='[data-action=arp],[data-action=arphold],[data-action=reset],#slotBtn,#slotPick,[data-action=play],#fnbar .bhold';
 function setLock(on){LOCKED=!!on;try{localStorage.setItem('lume-lock',LOCKED?'1':'0')}catch(e){}
   if(LOCKED){if(typeof closeInstMenu==='function'&&$('imDialog')&&$('imDialog').classList.contains('open'))closeInstMenu();if(typeof deckClose==='function'&&deckTab)deckClose();slotPickClose()}
@@ -6547,6 +6655,130 @@ deckInit();
 
 
 "use strict";
+/* ============================ drum matrix UI (v0.31) ============================
+   Touch rules, one per gesture: tap a pad = on (accent) / off. Long-press a pad = ghost.
+   Drag = paint along the row you started on (starting on a lit pad erases; after a long-press
+   it paints ghosts). Tap a track name = hear it (and record it while REC + PLAY).
+   Long-press a track name = swap its sound. Right-click / Shift-click also make ghosts on desktop. */
+let dmEl=null,dmCells=[],dmLabs=[],dmPhCol=-2;
+const DM_LP_MS=420;
+function dmBuild(){
+  dmEl=$('dmx');if(!dmEl)return;
+  let cols='';for(let b=0;b<4;b++){if(b)cols+=' 7px';cols+=' 1fr 1fr 1fr 1fr'}
+  dmEl.innerHTML=`
+  <div class="dm-tr">
+    <button type="button" class="dmb dm-rec" data-action="rec"><i></i>REC</button>
+    <button type="button" class="dmb" data-action="play"><i></i>PLAY</button>
+    <button type="button" class="dmb" data-action="clear" id="dmClr">CLR</button>
+  </div>
+  <div class="dm-ctl">
+    <button type="button" class="dm-lcd dm-pre" id="dmPreset"><small>PRESET ▾</small><b id="dmPreName">—</b></button>
+    <label class="dm-lcd dm-sw"><small>SWING</small><b id="dmSwRead">0%</b><input type="range" id="dmSwing" min="0" max="75" step="1" aria-label="Swing"></label>
+    <div class="dm-bars"><button type="button" class="dmb" id="dmBar0">BAR 1</button><button type="button" class="dmb" id="dmBar1">BAR 2</button></div>
+  </div>
+  <div class="dm-ctl2">
+    <button type="button" class="dmb" id="dmFollow"><i></i>FOLLOW</button>
+    <button type="button" class="dmb" id="dmCopy">CPY<small>1 → 2</small></button>
+  </div>
+  <div class="dm-labs">${[0,1,2,3].map(r=>`<button type="button" class="dm-lab" data-r="${r}"><b></b><span>▾</span></button>`).join('')}</div>
+  <div class="dm-grid" id="dmGrid" style="grid-template-columns:${cols.trim()}"></div>`;
+  const g=$('dmGrid');dmCells=[];
+  for(let b=1;b<4;b++){const d=document.createElement('i');d.className='dm-div';d.style.gridColumn=String(b*5);d.style.gridRow='1 / 5';g.appendChild(d)}
+  for(let r=0;r<DM_TRACKS;r++){const row=[];
+    for(let c=0;c<16;c++){const e=document.createElement('i');e.className='dm-c'+((c>>2)%2?' alt':'');
+      e.style.gridRow=String(r+1);e.style.gridColumn=String(c+1+(c>>2));g.appendChild(e);row.push(e)}
+    dmCells.push(row)}
+  dmLabs=[...dmEl.querySelectorAll('.dm-lab')];
+  g.addEventListener('pointerdown',dmGridDown);
+  g.addEventListener('contextmenu',e=>e.preventDefault());
+  dmLabs.forEach(l=>{l.addEventListener('pointerdown',dmLabDown);l.addEventListener('contextmenu',e=>{e.preventDefault();dmVoiceCycle(+l.dataset.r)})});
+  $('dmBar0').onclick=()=>dmBar(0);$('dmBar1').onclick=()=>dmBar(1);
+  $('dmFollow').onclick=()=>{dm.follow=!dm.follow;dmPrefsSave();if(dm.follow&&seq.playing&&seq.step>=0)dm.page=seq.step>>4;dmRender()};
+  $('dmCopy').onclick=()=>{dm.grid.forEach(row=>{for(let i=0;i<16;i++)row[i+16]=row[i]});dmFlash($('dmCopy'));dmRender();saveSoon()};
+  $('dmPreset').onclick=e=>{e.stopPropagation();dmPresetToggle()};
+  const sw=$('dmSwing');sw.oninput=()=>{seqSwing=+sw.value/200;syncSwingUI();lcd();saveSoon()};
+  dmRender()}
+function dmFlash(el){if(!el)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+function dmBar(p){dm.page=p;
+  if(seq.playing&&dm.follow&&seq.step>=0&&(seq.step>>4)!==p){dm.follow=false;dmPrefsSave()}   /* picking a bar while it follows: stay where you looked */
+  dmRender()}
+function syncSwingUI(){const p=swingPct(),sw=$('dmSwing'),rd=$('dmSwRead'),ps=document.querySelector('.pswing');
+  if(sw&&+sw.value!==p)sw.value=p;if(rd)rd.textContent=p+'%';if(ps&&+ps.value!==p)ps.value=p}
+function dmRender(){
+  if(!dmEl)return;
+  const off=dm.page*16;
+  for(let r=0;r<DM_TRACKS;r++)for(let c=0;c<16;c++){const v=dm.grid[r][off+c],e=dmCells[r][c];
+    if(e._v!==v){e._v=v;e.classList.toggle('v1',v===1);e.classList.toggle('v2',v===2)}}
+  dmLabs.forEach((l,r)=>{const t=(DV[dm.voices[r]]||DV.kick)[0],b=l.querySelector('b');if(b.textContent!==t)b.textContent=t});
+  $('dmBar0').classList.toggle('on',dm.page===0);$('dmBar1').classList.toggle('on',dm.page===1);
+  $('dmBar1').classList.toggle('has',dm.grid.some(r=>r.slice(16).some(Boolean)));
+  $('dmFollow').classList.toggle('on',dm.follow);
+  const pn=$('dmPreName'),nm=seq.beatName||'—';if(pn.textContent!==nm)pn.textContent=nm;
+  const clr=$('dmClr');clr.textContent=dmUndoGrid?'UNDO':'CLR';clr.classList.toggle('undo',!!dmUndoGrid);
+  dmEl.querySelectorAll('[data-action=rec]').forEach(b=>b.classList.toggle('on',seq.rec));
+  dmEl.querySelectorAll('[data-action=play]').forEach(b=>b.classList.toggle('on',seq.playing));
+  syncSwingUI();
+  dmCells.forEach(row=>row.forEach(e=>e.classList.remove('ph')));dmPhCol=-1;dmPlayhead()}
+function dmPlayhead(){
+  if(!dmEl)return;
+  const st=seq.playing?seq.step:-1;
+  if(dm.follow&&st>=0&&(st>>4)!==dm.page){dm.page=st>>4;dmRender();return}
+  const col=st>=0&&(st>>4)===dm.page?st%16:-1;
+  if(col!==dmPhCol){
+    for(let r=0;r<DM_TRACKS;r++){if(dmPhCol>=0)dmCells[r][dmPhCol].classList.remove('ph');if(col>=0)dmCells[r][col].classList.add('ph')}
+    dmPhCol=col}
+  if(st>=0&&seq.beatOn)for(let r=0;r<DM_TRACKS;r++)if(dm.grid[r][st])dmFlash(dmLabs[r])}
+function dmSetCell(r,i,v,audition){
+  if(dm.grid[r][i]===v)return;dm.grid[r][i]=v;
+  const c=i-dm.page*16;if(c>=0&&c<16){const e=dmCells[r][c];e._v=v;e.classList.toggle('v1',v===1);e.classList.toggle('v2',v===2)}
+  if(v&&audition)drumVoice(dm.voices[r],v>=2?1:VEL_GHOST);
+  if(i>=16)$('dmBar1').classList.toggle('has',dm.grid.some(rw=>rw.slice(16).some(Boolean)))}
+/* hit-testing works from the pointer position, not the element under it, so the gaps between
+   pads count too: a finger that lands between two rows still picks the nearer one */
+function dmColAt(x){let best=-1,bd=1e9;for(let c=0;c<16;c++){const q=dmCells[0][c].getBoundingClientRect(),d=Math.abs(x-(q.left+q.right)/2);if(d<bd){bd=d;best=c}}return best}
+function dmRowAt(y){const g=$('dmGrid').getBoundingClientRect();return Math.max(0,Math.min(DM_TRACKS-1,Math.floor((y-g.top)/(g.height/DM_TRACKS))))}
+function dmGridDown(ev){
+  ev.preventDefault();ev.stopPropagation();
+  initAudio();if(AC.state==='suspended')AC.resume();
+  const g=$('dmGrid'),r=dmRowAt(ev.clientY),c0=dmColAt(ev.clientX),i0=dm.page*16+c0;
+  if(ev.button===2||ev.shiftKey){dmSetCell(r,i0,dm.grid[r][i0]===1?0:1,true);saveSoon();return}   /* desktop: right-click / shift-click = ghost */
+  let val=dm.grid[r][i0]?0:2,last=c0,moved=false;
+  dmSetCell(r,i0,val,true);
+  const lp=setTimeout(()=>{if(moved)return;val=1;dmSetCell(r,i0,1,true);if(navigator.vibrate)try{navigator.vibrate(12)}catch(e){}},DM_LP_MS);
+  try{g.setPointerCapture(ev.pointerId)}catch(e){}
+  const mv=e=>{if(e.pointerId!==ev.pointerId)return;const c=dmColAt(e.clientX);if(c<0||c===last)return;
+    moved=true;clearTimeout(lp);
+    const s=c>last?1:-1;for(let k=last+s;;k+=s){dmSetCell(r,dm.page*16+k,val,val>0&&!seq.playing);if(k===c)break}   /* fast swipes skip pads: fill the gap */
+    last=c};
+  const up=e=>{if(e.pointerId!==ev.pointerId)return;clearTimeout(lp);
+    g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);
+    dmRender();saveSoon()};
+  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)}
+function dmLabDown(ev){
+  ev.preventDefault();ev.stopPropagation();
+  initAudio();if(AC.state==='suspended')AC.resume();
+  const l=ev.currentTarget,r=+l.dataset.r;if(ev.button===2)return;
+  drumVoice(dm.voices[r],1);dmFlash(l);dmRecordHit(r);
+  const lp=setTimeout(()=>{dmVoiceCycle(r)},DM_LP_MS);
+  const up=()=>{clearTimeout(lp);l.removeEventListener('pointerup',up);l.removeEventListener('pointercancel',up);l.removeEventListener('pointerleave',up)};
+  l.addEventListener('pointerup',up);l.addEventListener('pointercancel',up);l.addEventListener('pointerleave',up)}
+function dmVoiceCycle(r){const k=DV_ORDER.indexOf(dm.voices[r]);dm.voices[r]=DV_ORDER[(k+1)%DV_ORDER.length];
+  drumVoice(dm.voices[r],1);dmFlash(dmLabs[r]);dmRender();saveSoon()}
+/* PRESET pop-up: the beat library, plus the AUTO BPM switch */
+function dmPresetToggle(){const p=$('dmPresetPop');if(p&&p.classList.contains('open'))dmPresetClose();else dmPresetOpen()}
+function dmPresetOpen(){let p=$('dmPresetPop');
+  if(!p){p=document.createElement('div');p.id='dmPresetPop';
+    p.innerHTML=`<div class="dmp-head"><b>BEATS</b><span>2 bars each · tap to load and play</span><button type="button" class="dmb" id="dmAutoBpm"><i></i>AUTO BPM</button><button type="button" class="dmb dmp-x" aria-label="Close">✕</button></div><div class="dmp-list">${presetButtons()}</div>`;
+    p.querySelectorAll('[data-preset]').forEach(x=>x.onclick=()=>loadPreset(PRESET_LIST[+x.dataset.preset]));
+    p.querySelector('#dmAutoBpm').onclick=()=>{dm.autoBpm=!dm.autoBpm;dmPrefsSave();dmPresetSync()};
+    p.querySelector('.dmp-x').onclick=dmPresetClose;
+    $('synth').appendChild(p)}
+  dmPresetSync();p.classList.add('open');$('dmPreset').classList.add('on')}
+function dmPresetSync(){const p=$('dmPresetPop');if(!p)return;p.querySelector('#dmAutoBpm').classList.toggle('on',dm.autoBpm);
+  p.querySelectorAll('[data-preset]').forEach(x=>x.classList.toggle('on',PRESET_LIST[+x.dataset.preset].n===seq.beatName))}
+function dmPresetClose(){const p=$('dmPresetPop');if(p)p.classList.remove('open');const b=$('dmPreset');if(b)b.classList.remove('on')}
+document.addEventListener('pointerdown',e=>{if(!e.target.closest('#dmPresetPop,#dmPreset'))dmPresetClose()},true);
+
 (function(){
 const synthEl=document.getElementById('synth');
 function pressRoute(el){
@@ -6558,7 +6790,6 @@ function pressRoute(el){
   }
   return false;
 }
-function stepFill(i,deg){seq.steps[i]={deg,vel:95,dir:1,len:1};renderSeq();saveSoon()}
 function actionRoute(a){
   switch(a){
     case 'hold':setNoteHold(!state.latch);paint();break;
@@ -6572,9 +6803,6 @@ function actionRoute(a){
     case 'play':playPressed();break;
     case 'clear':seqClear();break;
     case 'tap':tapTempo();break;
-    case 'lane':{const order=['chord','K','S','H','R'];
-      seq.lane=order[(order.indexOf(seq.lane)+1)%order.length];
-      syncLaneButtons();renderSeq();break}
     case 'slot':{slotGoto(((slotPending>=0?slotPending:activeSlot)+1)%SLOTN.length);renderBank();break}
   }
 }
@@ -6639,7 +6867,7 @@ function startKeyTap(plate,el,ev){
 }
 /* unified pointer routing on the synth (skin buttons + engine) */
 synthEl.addEventListener('pointerdown',ev=>{
-  const el=ev.target.closest('[data-deg],[data-pad],[data-action]');
+  const el=ev.target.closest('[data-deg],[data-action]');
   if(!el)return;
   ev.preventDefault();
   if(el.dataset.action!==undefined){actionRoute(el.dataset.action);return}
@@ -6649,33 +6877,6 @@ synthEl.addEventListener('pointerdown',ev=>{
     const isCh=plate.classList.contains('chords');
     if(SLIDE[isCh?'chord':'note']==='off'){startKeyTap(plate,el,ev);return}
     startKeyGesture(plate,el,ev);
-    return;
-  }
-  el.classList.add('is-down');
-  if(el.dataset.pad!==undefined){
-    const i=+el.dataset.pad;
-    if(seq.lane!=='chord'){
-      /* drum lane: tap toggles the selected voice at this step, with an audible preview */
-      initAudio();if(AC.state==='suspended')AC.resume();
-      drum[seq.lane][i]=drum[seq.lane][i]?0:1;
-      percHit(seq.lane==='K'?'K':seq.lane==='S'?'S':seq.lane==='H'?'h':'r');
-      el.classList.remove('is-down');renderSeq();saveSoon();
-      return;
-    }
-    /* chord lane: short tap fill/clear · long press ties 1→2→4 */
-    let lp=false;
-    try{el.setPointerCapture(ev.pointerId)}catch(e){}   /* lifting off-pad still ends the press */
-    const t=setTimeout(()=>{lp=true;const s=seq.steps[i];
-      if(s){s.len=s.len>=4?1:(s.len===1?2:4);renderSeq();saveSoon()}},500);
-    const up=()=>{clearTimeout(t);
-      el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);
-      el.classList.remove('is-down');
-      if(!lp){
-        if(seq.steps[i]){seq.steps[i]=null;saveSoon()}
-        else if(lastDeg!==null)stepFill(i,lastDeg);
-        else renderSeq();
-      }};
-    el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);
     return;
   }
 });
@@ -6737,14 +6938,7 @@ addEventListener('blur',()=>{
 addEventListener('pagehide',()=>{seqPlay(false);arpSet(false);midiAllOff(null,true);clockStop();panic()});   /* full stop, drone included (panic tears it down): a bfcache-returned page must wake silent */
 start.addEventListener('pointerdown',()=>{initAudio();AC.resume();requestWakeLock();start.style.display='none';DM.powerOn()});
 
-/* pads label spans */
-pads=[...synthEl.querySelectorAll('.pad')];
-pads.forEach(p=>{
-  const s=document.createElement('span');s.className='pl';p.appendChild(s);
-  const d=document.createElement('span');d.className='dleds';
-  d.innerHTML=DRUM_VOICES.map(v=>`<i data-v="${v}"></i>`).join('');
-  p.appendChild(d);
-});
+dmBuild();
 
 bindRibbon('L',synthEl.querySelector('[data-ribbon=left]'));
 bindRibbon('R',synthEl.querySelector('[data-ribbon=right]'));
