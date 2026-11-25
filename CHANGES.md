@@ -108,3 +108,11 @@ idle 9.4x -> 21.5x, chord + 6 notes held 5.1x -> 8.8x, 40-string strum 6.1x -> 8
 - The level meters now update in the same frame as the LUME display instead of in alternate frames.
 - Measured at tablet-like CPU speed with a 132 BPM beat: tap-to-screen latency is back to v0.30's
   (v0.31 was about 10-25% slower).
+
+# LUME v0.31c
+
+## Drum volumes on the grid
+- Each row name now doubles as a volume control: slide sideways on it (0-150%, catches at 100%).
+  A thin bar under the name shows the level. Tap still plays it, hold still swaps the sound.
+- New MIX key (under CPY): the grid becomes four large row faders plus a DRUMS master fader.
+- Levels are saved with each slot; loading a preset keeps your levels.
