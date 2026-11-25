@@ -97,3 +97,14 @@ idle 9.4x -> 21.5x, chord + 6 notes held 5.1x -> 8.8x, 40-string strum 6.1x -> 8
 ## Saving
 - The bank saves under a new key (lume-dm-bank). On first run it imports a v0.30 bank, turning each
   16-step beat into two identical bars. The v0.30 bank itself is left untouched.
+
+# LUME v0.31b
+
+## Less lag while the beat plays
+- The drum grid's moving playhead and row-name flashes no longer restyle the pads from the step timer.
+  The playhead is one overlay slid with a transform and the flashes are opacity fades, so they run on
+  the compositor and the step timer only plays sound. v0.31 had added a forced page layout on every
+  drum hit (to restart the flash), which delayed taps on the keys and ribbons while the beat ran.
+- The level meters now update in the same frame as the LUME display instead of in alternate frames.
+- Measured at tablet-like CPU speed with a 132 BPM beat: tap-to-screen latency is back to v0.30's
+  (v0.31 was about 10-25% slower).

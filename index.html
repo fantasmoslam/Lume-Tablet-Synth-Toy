@@ -938,23 +938,24 @@ body[data-skin="genesis"] #deck .dval,body[data-skin="retro"] #deck .dval,body[d
   box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -3px 5px rgba(0,0,0,.55)}
 #dmx .dm-lab b{font-size:11px;font-weight:800;letter-spacing:.06em}
 #dmx .dm-lab span{position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:9px;opacity:.45}
-#dmx .dm-lab.flash{animation:dmhit .16s ease-out}
 @keyframes dmhit{from{color:#fff;background:linear-gradient(#5A3A20,#2A1A10)}to{}}
 #dmx .dmb.flash{animation:dmhit .4s ease-out}
 #dmx .dm-grid{flex:1;display:grid;grid-template-rows:repeat(4,1fr);column-gap:4px;row-gap:3px;padding:4px 6px;border-radius:8px;background:var(--dm-bez);touch-action:none;
   box-shadow:inset 0 0 0 1.5px #000,inset 0 3px 8px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.07)}
 #dmx .dm-div{width:1px;justify-self:center;background:rgba(255,176,0,.18)}
-#dmx .dm-c{display:block;border-radius:4px;background:var(--dm-off);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -2px 3px rgba(0,0,0,.45);transition:background .06s}
+#dmx .dm-c{display:block;border-radius:4px;background:var(--dm-off);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -2px 3px rgba(0,0,0,.45)}
 #dmx .dm-c.alt{background:var(--dm-off2)}
+/* v0.31b: the playhead is one overlay slid with a transform, and the row-name flash is an opacity
+   fade: both run on the compositor, so the step timer never restyles or repaints the pads */
+#dmx{contain:layout style paint}
+#dmx .dm-ph{grid-row:1 / 5;grid-column:1;pointer-events:none;border-radius:4px;z-index:1;opacity:0;will-change:transform,opacity;
+  box-shadow:inset 0 0 0 2px rgba(255,236,200,.95);background:rgba(255,236,200,.18)}
+#dmx .dm-lab em{position:absolute;inset:0;border-radius:5px;background:rgba(255,170,90,.38);opacity:0;pointer-events:none;will-change:opacity}
 #dmx .dm-c.v1{background:var(--dm-ghost);box-shadow:inset 0 1px 0 rgba(255,220,180,.25),0 0 5px rgba(184,74,20,.45)}
 #dmx .dm-c.v2{background:linear-gradient(var(--dm-acc1),var(--dm-acc2));box-shadow:inset 0 1px 0 rgba(255,240,220,.6),0 0 9px var(--dm-glow)}
-#dmx .dm-c.ph{box-shadow:inset 0 0 0 2px rgba(255,236,200,.95)}
-#dmx .dm-c.ph:not(.v1):not(.v2){background:#5C4434}
-#dmx .dm-c.ph.v1,#dmx .dm-c.ph.v2{filter:brightness(1.35)}
 /* other skins: lit pads take the skin's own pad colours */
 body[data-skin]:not([data-skin="lyra"]) #dmx{--dm-acc1:var(--pad-top);--dm-acc2:var(--pad-bot)}
 body[data-skin]:not([data-skin="lyra"]) #dmx .dm-c.v1{background:linear-gradient(var(--pad-top),var(--pad-bot));opacity:.55}
-body[data-skin]:not([data-skin="lyra"]) #dmx .dm-c.v1.ph{opacity:.8}
 /* the PRESET pop-up sits over the panels above the strip */
 #dmPresetPop{display:none;position:absolute;left:92px;top:24px;width:820px;max-height:296px;z-index:60;flex-direction:column;
   background:#121317;border-radius:12px;box-shadow:0 0 0 1.5px #000,0 0 0 3px #33353C,0 18px 40px rgba(0,0,0,.6);padding:10px 12px 12px;color:#EDE8DA;font-family:var(--font)}
@@ -2104,7 +2105,8 @@ const DM=(()=>{
   const busy=()=>powered&&A||fxs.length;
   function loop(ts){raf=0;if(debug)return;if(document.hidden)return;
     const act=energy>.04||fxs.length,gap=(amode==='light'||slow)?(act?66:100):(act?33:45);
-    if(ts-lastTs>=gap){const dt=Math.min(.1,(ts-lastTs)/1000||.033);lastTs=ts;const t0=performance.now();frame(dt);draw();ema=ema*.9+(performance.now()-t0)*.1;if(ema>5)slow=true;else if(ema<2.5)slow=false}
+    if(ts-lastTs>=gap){const dt=Math.min(.1,(ts-lastTs)/1000||.033);lastTs=ts;const t0=performance.now();frame(dt);draw();ema=ema*.9+(performance.now()-t0)*.1;if(ema>5)slow=true;else if(ema<2.5)slow=false;
+      window.__dmDrawTs=ts;if(window.__vuTick)window.__vuTick(ts)}   /* v0.31b: the meters update in the same frame as the display, so the two ~30 fps animations cost one rendered frame, not two */
     if(busy())raf=requestAnimationFrame(loop)}
   const ensure=()=>{if(!raf&&!debug&&!document.hidden){lastTs=performance.now();raf=requestAnimationFrame(loop)}};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&busy())ensure()});
@@ -6059,10 +6061,11 @@ function attachKnobControl(el,{set,label,def,px=150}){
   let last=0,winPk=0,winAt=0,dbTxt='',ledCls='',hotUntil=0,warnUntil=0,pinnedSince=0;
   const pos=a=>a<1e-5?0:Math.max(0,Math.min(1,(20*Math.log10(a)+40)/40));   /* -40 dB .. 0 dB across the bar */
   led.addEventListener('click',()=>{hold[0]=hold[1]=0;winPk=0;hotUntil=warnUntil=0});
-  function frame(now){
-    requestAnimationFrame(frame);
+  function frame(now,fromDm){
+    if(!fromDm)requestAnimationFrame(frame);
     if(document.hidden||!vuAnL)return;
-    const mode=(typeof DM!=='undefined'&&DM.getMode)?DM.getMode():'full',iv=mode==='full'?33:mode==='light'?66:100;
+    if(!fromDm&&now-(window.__dmDrawTs||-1e9)<150)return;   /* the display is animating: it drives the meters (v0.31b) */
+    const mode=(typeof DM!=='undefined'&&DM.getMode)?DM.getMode():'full',iv=(mode==='full'?33:mode==='light'?66:100)-(fromDm?8:0);
     if(now-last<iv)return;const dt=Math.min(.25,(now-last)/1000);last=now;
     let framePk=0,bad=false;
     [vuAnL,vuAnR].forEach((an,i)=>{
@@ -6088,6 +6091,7 @@ function attachKnobControl(el,{set,label,def,px=150}){
     const cls=now<hotUntil?'hot':now<warnUntil?'warn':'';
     if(cls!==ledCls){ledCls=cls;led.classList.toggle('hot',cls==='hot');led.classList.toggle('warn',cls==='warn')}
   }
+  window.__vuTick=t=>frame(t,true);
   requestAnimationFrame(frame);
 })();
 
@@ -6660,7 +6664,8 @@ deckInit();
    Drag = paint along the row you started on (starting on a lit pad erases; after a long-press
    it paints ghosts). Tap a track name = hear it (and record it while REC + PLAY).
    Long-press a track name = swap its sound. Right-click / Shift-click also make ghosts on desktop. */
-let dmEl=null,dmCells=[],dmLabs=[],dmPhCol=-2;
+let dmEl=null,dmCells=[],dmLabs=[],dmPhCol=-2,dmPh=null,dmColX=null,dmPhRaf=0;
+addEventListener('resize',()=>{dmColX=null;dmPhCol=-2});
 const DM_LP_MS=420;
 function dmBuild(){
   dmEl=$('dmx');if(!dmEl)return;
@@ -6680,7 +6685,7 @@ function dmBuild(){
     <button type="button" class="dmb" id="dmFollow"><i></i>FOLLOW</button>
     <button type="button" class="dmb" id="dmCopy">CPY<small>1 → 2</small></button>
   </div>
-  <div class="dm-labs">${[0,1,2,3].map(r=>`<button type="button" class="dm-lab" data-r="${r}"><b></b><span>▾</span></button>`).join('')}</div>
+  <div class="dm-labs">${[0,1,2,3].map(r=>`<button type="button" class="dm-lab" data-r="${r}"><em></em><b></b><span>▾</span></button>`).join('')}</div>
   <div class="dm-grid" id="dmGrid" style="grid-template-columns:${cols.trim()}"></div>`;
   const g=$('dmGrid');dmCells=[];
   for(let b=1;b<4;b++){const d=document.createElement('i');d.className='dm-div';d.style.gridColumn=String(b*5);d.style.gridRow='1 / 5';g.appendChild(d)}
@@ -6688,6 +6693,7 @@ function dmBuild(){
     for(let c=0;c<16;c++){const e=document.createElement('i');e.className='dm-c'+((c>>2)%2?' alt':'');
       e.style.gridRow=String(r+1);e.style.gridColumn=String(c+1+(c>>2));g.appendChild(e);row.push(e)}
     dmCells.push(row)}
+  dmPh=document.createElement('i');dmPh.className='dm-ph';g.appendChild(dmPh);
   dmLabs=[...dmEl.querySelectorAll('.dm-lab')];
   g.addEventListener('pointerdown',dmGridDown);
   g.addEventListener('contextmenu',e=>e.preventDefault());
@@ -6718,16 +6724,20 @@ function dmRender(){
   dmEl.querySelectorAll('[data-action=rec]').forEach(b=>b.classList.toggle('on',seq.rec));
   dmEl.querySelectorAll('[data-action=play]').forEach(b=>b.classList.toggle('on',seq.playing));
   syncSwingUI();
-  dmCells.forEach(row=>row.forEach(e=>e.classList.remove('ph')));dmPhCol=-1;dmPlayhead()}
-function dmPlayhead(){
+  dmPhCol=-2;dmPlayheadNow()}
+function dmPlayhead(){if(!dmPhRaf)dmPhRaf=requestAnimationFrame(()=>{dmPhRaf=0;dmPlayheadNow()})}   /* visuals wait for the next frame; the step timer only plays sound */
+function dmLabFlash(r){const e=dmLabs[r]&&dmLabs[r].firstChild;if(e&&e.animate)e.animate([{opacity:1},{opacity:0}],{duration:170,easing:'ease-out'})}
+function dmPlayheadNow(){
   if(!dmEl)return;
   const st=seq.playing?seq.step:-1;
   if(dm.follow&&st>=0&&(st>>4)!==dm.page){dm.page=st>>4;dmRender();return}
   const col=st>=0&&(st>>4)===dm.page?st%16:-1;
   if(col!==dmPhCol){
-    for(let r=0;r<DM_TRACKS;r++){if(dmPhCol>=0)dmCells[r][dmPhCol].classList.remove('ph');if(col>=0)dmCells[r][col].classList.add('ph')}
+    if(col>=0){if(!dmColX){const x0=dmCells[0][0].offsetLeft;dmColX=dmCells[0].map(e=>e.offsetLeft-x0)}
+      dmPh.style.transform='translateX('+dmColX[col]+'px)';dmPh.style.opacity=1}
+    else dmPh.style.opacity=0;
     dmPhCol=col}
-  if(st>=0&&seq.beatOn)for(let r=0;r<DM_TRACKS;r++)if(dm.grid[r][st])dmFlash(dmLabs[r])}
+  if(st>=0&&seq.beatOn)for(let r=0;r<DM_TRACKS;r++)if(dm.grid[r][st])dmLabFlash(r)}
 function dmSetCell(r,i,v,audition){
   if(dm.grid[r][i]===v)return;dm.grid[r][i]=v;
   const c=i-dm.page*16;if(c>=0&&c<16){const e=dmCells[r][c];e._v=v;e.classList.toggle('v1',v===1);e.classList.toggle('v2',v===2)}
@@ -6758,12 +6768,12 @@ function dmLabDown(ev){
   ev.preventDefault();ev.stopPropagation();
   initAudio();if(AC.state==='suspended')AC.resume();
   const l=ev.currentTarget,r=+l.dataset.r;if(ev.button===2)return;
-  drumVoice(dm.voices[r],1);dmFlash(l);dmRecordHit(r);
+  drumVoice(dm.voices[r],1);dmLabFlash(r);dmRecordHit(r);
   const lp=setTimeout(()=>{dmVoiceCycle(r)},DM_LP_MS);
   const up=()=>{clearTimeout(lp);l.removeEventListener('pointerup',up);l.removeEventListener('pointercancel',up);l.removeEventListener('pointerleave',up)};
   l.addEventListener('pointerup',up);l.addEventListener('pointercancel',up);l.addEventListener('pointerleave',up)}
 function dmVoiceCycle(r){const k=DV_ORDER.indexOf(dm.voices[r]);dm.voices[r]=DV_ORDER[(k+1)%DV_ORDER.length];
-  drumVoice(dm.voices[r],1);dmFlash(dmLabs[r]);dmRender();saveSoon()}
+  drumVoice(dm.voices[r],1);dmLabFlash(r);dmRender();saveSoon()}
 /* PRESET pop-up: the beat library, plus the AUTO BPM switch */
 function dmPresetToggle(){const p=$('dmPresetPop');if(p&&p.classList.contains('open'))dmPresetClose();else dmPresetOpen()}
 function dmPresetOpen(){let p=$('dmPresetPop');
