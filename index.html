@@ -932,29 +932,45 @@ body[data-skin="genesis"] #deck .dval,body[data-skin="retro"] #deck .dval,body[d
 #dmx .dm-ctl2{width:62px;display:flex;flex-direction:column;gap:4px}
 #dmx .dm-ctl2 .dmb{flex:1;flex-direction:column;gap:3px}
 #dmx .dm-ctl2 .dmb small{font-size:9px;letter-spacing:.04em;opacity:.7}
+#dmx .dm-ctl2 .dmb{font-size:10px;letter-spacing:.05em;flex-direction:row}
+#dmx .dm-grid{position:relative}
+#dmx .dm-mix{display:none;position:absolute;inset:0;z-index:2;padding:4px 6px;border-radius:8px;background:var(--dm-bez);
+  grid-template-columns:1fr 96px;grid-template-rows:repeat(4,1fr);gap:3px 8px;touch-action:none}
+#dmx .dm-mix.open{display:grid}
+#dmx .mx-f{position:relative;border-radius:4px;background:var(--dm-off);overflow:hidden;cursor:ew-resize;box-shadow:inset 0 -2px 3px rgba(0,0,0,.45)}
+#dmx .mx-f i{position:absolute;inset:0;transform-origin:left center;background:linear-gradient(90deg,var(--dm-ghost),var(--dm-acc1));will-change:transform}
+#dmx .mx-f u{position:absolute;top:0;bottom:0;left:66.67%;width:2px;margin-left:-1px;background:rgba(255,240,220,.55)}
+#dmx .mx-f b{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:800;letter-spacing:.06em;color:#FFF3E0;text-shadow:0 1px 2px rgba(0,0,0,.8);pointer-events:none}
+#dmx .mx-m{grid-column:2;grid-row:1 / 5;cursor:ns-resize}
+#dmx .mx-m i{transform-origin:center bottom;background:linear-gradient(0deg,var(--dm-ghost),var(--dm-acc1))}
+#dmx .mx-m u{left:0;right:0;top:33.33%;bottom:auto;width:auto;height:2px;margin:-1px 0 0}
+#dmx .mx-m b{left:0;right:0;top:auto;bottom:6px;transform:none;text-align:center;font-size:10px}
 #dmx .dm-labs{width:76px;display:grid;grid-template-rows:repeat(4,1fr);gap:3px}
 #dmx .dm-lab{position:relative;border:0;border-radius:5px;padding:0 0 0 7px;text-align:left;cursor:pointer;touch-action:none;
   background:linear-gradient(#26282f,#141519);color:var(--dm-ink);font-family:var(--font);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.10),inset 0 -3px 5px rgba(0,0,0,.55)}
 #dmx .dm-lab b{font-size:11px;font-weight:800;letter-spacing:.06em}
+#dmx .dm-lab s{position:absolute;left:4px;right:4px;bottom:2px;height:3px;border-radius:2px;background:linear-gradient(90deg,#B84A14,#FFB000);transform-origin:left center;opacity:.8;pointer-events:none;will-change:transform}
+#dmx .dm-lab.lvl{color:var(--dm-amber);box-shadow:inset 0 0 0 1.5px var(--dm-amber)}
 #dmx .dm-lab span{position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:9px;opacity:.45}
-#dmx .dm-lab.flash{animation:dmhit .16s ease-out}
 @keyframes dmhit{from{color:#fff;background:linear-gradient(#5A3A20,#2A1A10)}to{}}
 #dmx .dmb.flash{animation:dmhit .4s ease-out}
 #dmx .dm-grid{flex:1;display:grid;grid-template-rows:repeat(4,1fr);column-gap:4px;row-gap:3px;padding:4px 6px;border-radius:8px;background:var(--dm-bez);touch-action:none;
   box-shadow:inset 0 0 0 1.5px #000,inset 0 3px 8px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.07)}
 #dmx .dm-div{width:1px;justify-self:center;background:rgba(255,176,0,.18)}
-#dmx .dm-c{display:block;border-radius:4px;background:var(--dm-off);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -2px 3px rgba(0,0,0,.45);transition:background .06s}
+#dmx .dm-c{display:block;border-radius:4px;background:var(--dm-off);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -2px 3px rgba(0,0,0,.45)}
 #dmx .dm-c.alt{background:var(--dm-off2)}
+/* v0.31b: the playhead is one overlay slid with a transform, and the row-name flash is an opacity
+   fade: both run on the compositor, so the step timer never restyles or repaints the pads */
+#dmx{contain:layout style paint}
+#dmx .dm-ph{grid-row:1 / 5;grid-column:1;pointer-events:none;border-radius:4px;z-index:1;opacity:0;will-change:transform,opacity;
+  box-shadow:inset 0 0 0 2px rgba(255,236,200,.95);background:rgba(255,236,200,.18)}
+#dmx .dm-lab em{position:absolute;inset:0;border-radius:5px;background:rgba(255,170,90,.38);opacity:0;pointer-events:none;will-change:opacity}
 #dmx .dm-c.v1{background:var(--dm-ghost);box-shadow:inset 0 1px 0 rgba(255,220,180,.25),0 0 5px rgba(184,74,20,.45)}
 #dmx .dm-c.v2{background:linear-gradient(var(--dm-acc1),var(--dm-acc2));box-shadow:inset 0 1px 0 rgba(255,240,220,.6),0 0 9px var(--dm-glow)}
-#dmx .dm-c.ph{box-shadow:inset 0 0 0 2px rgba(255,236,200,.95)}
-#dmx .dm-c.ph:not(.v1):not(.v2){background:#5C4434}
-#dmx .dm-c.ph.v1,#dmx .dm-c.ph.v2{filter:brightness(1.35)}
 /* other skins: lit pads take the skin's own pad colours */
 body[data-skin]:not([data-skin="lyra"]) #dmx{--dm-acc1:var(--pad-top);--dm-acc2:var(--pad-bot)}
 body[data-skin]:not([data-skin="lyra"]) #dmx .dm-c.v1{background:linear-gradient(var(--pad-top),var(--pad-bot));opacity:.55}
-body[data-skin]:not([data-skin="lyra"]) #dmx .dm-c.v1.ph{opacity:.8}
 /* the PRESET pop-up sits over the panels above the strip */
 #dmPresetPop{display:none;position:absolute;left:92px;top:24px;width:820px;max-height:296px;z-index:60;flex-direction:column;
   background:#121317;border-radius:12px;box-shadow:0 0 0 1.5px #000,0 0 0 3px #33353C,0 18px 40px rgba(0,0,0,.6);padding:10px 12px 12px;color:#EDE8DA;font-family:var(--font)}
@@ -1818,7 +1834,7 @@ body.stage-mode .top{filter:brightness(.92)}
       <details class="ms"><summary>The arpeggiator</summary><div class="mb"><p>The arp plays the notes of the chord you are holding, one after another. Turn it on with the pill's <b>Arp</b> key or <kbd>G</kbd>, and set its speed with <b>Rate −</b> and <b>Rate +</b>. The full controls sit at the top of the <b>Chord</b> sheet.</p><ul><li><b>Arp:</b> on or off, the same as the pill key.</li><li><b>Hold:</b> keeps arpeggiating the last chord after you let go, so both hands are free.</li><li><b>Sync:</b> locks the rate to the tempo, so 1/16 always means a sixteenth note. Turn it off for fixed speeds.</li><li><b>Rate:</b> 1/8, 1/8 triplet, 1/16, 1/16 triplet or 1/32.</li><li><b>Pattern:</b> Up, Down, Up-Dn or Random. <b>Octaves:</b> 1–4. <b>Gate:</b> how long each note sounds, from short and detached to fully connected.</li></ul></div></details>
       <details class="ms"><summary>The drone</summary><div class="mb"><p>The drone is a second, independent sustained chord that layers underneath normal play. Start and stop it with the <b>Drone</b> switch near the top of the instrument (its LED lights and shows the chord it holds), the <b>DRONE</b> tab, or the readout in the display. Keep tapping other chords, latch and release them, even change key — the drone plays on underneath until you stop it.</p><ul><li><b>Voicing:</b> Chord, Fifths, Octaves or Sus2. <b>Follow chords</b> makes the drone track whatever chord you are playing.</li><li><b>Tone &amp; motion:</b> Sub octave, Tone, Breath, Breath rate, Warble and Pulse (with a division from 1/2 to 1/16).</li><li><b>Air:</b> Wind and Crackle — a slow noise bed and sparse vinyl dust.</li><li><b>Grain:</b> a filtered-noise bed (Level and Tone). <b>Sparkle:</b> sparse bell-like events (Rate, Level and Ring length), always sent generously to the delay and reverb so they trail off into the distance. Grain and Sparkle stop when the drone does.</li><li>A fresh drone with no modulation set yet gets a gentle default movement and texture, so it is alive from the first note rather than sitting static.</li></ul></div></details>
       <details class="ms"><summary>Space: shimmer reverb &amp; tape echo</summary><div class="mb"><p>Open the <b>Space</b> tab for the shared ambience every instrument sends to, and use the <b>Space</b> master knob up top for a quick hand on the reverb.</p><ul><li><b>Shimmer:</b> on/off and <b>Amount</b> — a pitch-shifted layer inside the reverb that feeds back an octave up on every pass.</li><li><b>Reverb:</b> Decay, Tone and Mix — a long, smooth plate built from a feedback delay network.</li><li><b>Tape echo:</b> Level, Time and Repeats — a pitch-warped delay with wow and flutter.</li><li><b>Tape hiss:</b> the faint analog noise floor. <b>Reset</b> returns the whole Space section to its defaults.</li></ul></div></details>
-      <details class="ms"><summary>The drum grid</summary><div class="mb"><p>Four drum rows, sixteen steps each, two bars long. Each row has its own sound, so there is nothing to switch between.</p><h4>Writing a beat</h4><ul><li><b>Tap</b> a pad to add a loud hit (bright). Tap it again to clear it.</li><li><b>Press and hold</b> a pad for a soft ghost note (dim orange).</li><li><b>Drag</b> along a row to paint hits, which is quick for hi-hat runs. Starting the drag on a lit pad erases instead. Your finger stays on the row it started on.</li><li>On a computer, right-click or Shift-click also makes a ghost note.</li></ul><h4>Sounds</h4><ul><li><b>Tap a row name</b> (KICK, SNARE, C-HAT, O-HAT) to hear it.</li><li><b>Press and hold</b> a row name to swap that row's sound: kick, 808, snare, clap, rim, closed hat, open hat, tom or bell.</li><li>A closed hat cuts off a ringing open hat, like a real kit.</li></ul><h4>Two bars</h4><ul><li><b>BAR 1</b> and <b>BAR 2</b> pick which bar the grid shows. A small dot on BAR 2 means it has hits.</li><li><b>FOLLOW</b> (on by default) flips the view to whichever bar is playing. Picking a bar yourself while it plays turns FOLLOW off.</li><li><b>CPY</b> copies bar 1 into bar 2, so you can make a small change for the second bar.</li></ul><h4>Presets, swing and the rest</h4><ul><li><b>PRESET</b> opens the beat library: tap one to load it and play. <b>AUTO BPM</b> in that list sets each beat's own tempo; turn it off to keep yours.</li><li><b>SWING</b> pushes every second 16th later. 0% is straight; around 50–65% is a classic MPC-style shuffle. Each preset sets its own swing.</li><li><b>CLR</b> wipes the pattern. For four seconds afterwards it reads <b>UNDO</b>, so a slip is one tap to fix.</li><li><b>REC</b>: while REC is lit and the beat plays, tapping a row name writes a hit on the nearest 16th.</li><li>The <b>Rib R</b> tab still has tempo, swing, <b>human</b> (a little timing and velocity looseness), <b>Beat off</b> and <b>Tap</b> tempo.</li><li>In the pill, use <b>−</b> and <b>+</b> for one BPM at a time (hold to speed up), <b>drag the number</b> up or down, or <b>tap the number</b> to type an exact BPM.</li></ul></div></details>
+      <details class="ms"><summary>The drum grid</summary><div class="mb"><p>Four drum rows, sixteen steps each, two bars long. Each row has its own sound, so there is nothing to switch between.</p><h4>Writing a beat</h4><ul><li><b>Tap</b> a pad to add a loud hit (bright). Tap it again to clear it.</li><li><b>Press and hold</b> a pad for a soft ghost note (dim orange).</li><li><b>Drag</b> along a row to paint hits, which is quick for hi-hat runs. Starting the drag on a lit pad erases instead. Your finger stays on the row it started on.</li><li>On a computer, right-click or Shift-click also makes a ghost note.</li></ul><h4>Sounds</h4><ul><li><b>Tap a row name</b> (KICK, SNARE, C-HAT, O-HAT) to hear it.</li><li><b>Press and hold</b> a row name to swap that row's sound: kick, 808, snare, clap, rim, closed hat, open hat, tom or bell.</li><li><b>Slide sideways</b> on a row name to set that row's volume. The thin bar under the name shows it; 100% is the original level and it goes up to 150%.</li><li><b>MIX</b> turns the grid into big volume faders for the four rows plus a <b>DRUMS</b> master on the right. Tap MIX again to get the pads back. Levels are saved with the slot, and loading a preset keeps them.</li><li>A closed hat cuts off a ringing open hat, like a real kit.</li></ul><h4>Two bars</h4><ul><li><b>BAR 1</b> and <b>BAR 2</b> pick which bar the grid shows. A small dot on BAR 2 means it has hits.</li><li><b>FOLLOW</b> (on by default) flips the view to whichever bar is playing. Picking a bar yourself while it plays turns FOLLOW off.</li><li><b>CPY</b> copies bar 1 into bar 2, so you can make a small change for the second bar.</li></ul><h4>Presets, swing and the rest</h4><ul><li><b>PRESET</b> opens the beat library: tap one to load it and play. <b>AUTO BPM</b> in that list sets each beat's own tempo; turn it off to keep yours.</li><li><b>SWING</b> pushes every second 16th later. 0% is straight; around 50–65% is a classic MPC-style shuffle. Each preset sets its own swing.</li><li><b>CLR</b> wipes the pattern. For four seconds afterwards it reads <b>UNDO</b>, so a slip is one tap to fix.</li><li><b>REC</b>: while REC is lit and the beat plays, tapping a row name writes a hit on the nearest 16th.</li><li>The <b>Rib R</b> tab still has tempo, swing, <b>human</b> (a little timing and velocity looseness), <b>Beat off</b> and <b>Tap</b> tempo.</li><li>In the pill, use <b>−</b> and <b>+</b> for one BPM at a time (hold to speed up), <b>drag the number</b> up or down, or <b>tap the number</b> to type an exact BPM.</li></ul></div></details>
       <details class="ms"><summary>The PAD bank</summary><div class="mb"><p>Open the <b>PADS</b> tab for a bank of thirty assignable pads — two rows of fifteen — across four pages (<b>A–D</b>), so 120 in all. They sit in the sequencer's strip while the keys stay live.</p><ul><li>Tap a pad to play it. Chords and notes sound for as long as you hold the pad, just like keys; drums fire a hit.</li><li>Press <b>EDIT</b>, then tap a pad to assign it: choose its <b>type</b> (Chord, Note, Drum or Off), then the chord degree, the note and octave, or the drum — and optionally a <b>voice</b> from the whole library. Changes apply and sound at once.</li><li><b>PAGE</b> cycles A–D; the four dots show where you are. Pads are remembered on this device.</li></ul></div></details>
       <details class="ms"><summary>Recording</summary><div class="mb"><p>The recorder is the tape deck on the left of the master row. Press the red button to record everything reaching the speakers (including Space), and press it again to stop.</p><ul><li>The <b>tape window</b> draws your take as it is captured, and zooms out when the window fills.</li><li>Transport: <b>⏮</b> back to start, <b>▶</b> play/pause, <b>⟲</b> loop and <b>⤓</b> download.</li><li><b>Tap</b> the tape to jump there and play, or <b>drag</b> it to scrub with sound, like rocking a tape past the head.</li><li>Short and medium takes download as a universally openable <b>WAV</b>; takes over ten minutes stay compressed, to keep the device happy.</li></ul></div></details>
       <details class="ms"><summary>The output section</summary><div class="mb"><ul><li><b>Volume</b>, <b>Filter</b>, <b>Drive</b> and <b>Space</b> are master knobs across the top of the instrument: overall level, a resonant master filter sweep, overall grit, and overall reverb amount. The display's first line opens Key, Scale and master Volume as well.</li><li>The <b>output meter</b> beside them is a true stereo peak meter of what actually leaves Lume, after every effect and the safety limiter — fast bars, a white peak-hold tick, and a numeric dB readout of the loudest moment in the last second or so.</li><li>The <b>PEAK</b> light goes amber when the limiter is gently working and red at the ceiling. Tap it to reset the holds.</li></ul></div></details>
@@ -2104,7 +2120,8 @@ const DM=(()=>{
   const busy=()=>powered&&A||fxs.length;
   function loop(ts){raf=0;if(debug)return;if(document.hidden)return;
     const act=energy>.04||fxs.length,gap=(amode==='light'||slow)?(act?66:100):(act?33:45);
-    if(ts-lastTs>=gap){const dt=Math.min(.1,(ts-lastTs)/1000||.033);lastTs=ts;const t0=performance.now();frame(dt);draw();ema=ema*.9+(performance.now()-t0)*.1;if(ema>5)slow=true;else if(ema<2.5)slow=false}
+    if(ts-lastTs>=gap){const dt=Math.min(.1,(ts-lastTs)/1000||.033);lastTs=ts;const t0=performance.now();frame(dt);draw();ema=ema*.9+(performance.now()-t0)*.1;if(ema>5)slow=true;else if(ema<2.5)slow=false;
+      window.__dmDrawTs=ts;if(window.__vuTick)window.__vuTick(ts)}   /* v0.31b: the meters update in the same frame as the display, so the two ~30 fps animations cost one rendered frame, not two */
     if(busy())raf=requestAnimationFrame(loop)}
   const ensure=()=>{if(!raf&&!debug&&!document.hidden){lastTs=performance.now();raf=requestAnimationFrame(loop)}};
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&busy())ensure()});
@@ -3956,8 +3973,10 @@ function arpSet(on){
 const SEQ_LEN=32,DM_TRACKS=4,VEL_GHOST=0.45;
 const DM_DEF_VOICES=['kick','snare','chat','ohat'];
 const dmGridNew=()=>Array.from({length:DM_TRACKS},()=>new Array(SEQ_LEN).fill(0));
-const dmCopy=o=>({grid:o.grid.map(r=>r.slice()),voices:o.voices.slice()});
-const dm={grid:dmGridNew(),voices:DM_DEF_VOICES.slice(),page:0,follow:true,autoBpm:true};
+const dmLvNew=()=>[1,1,1,1];
+const dmCopy=o=>({grid:o.grid.map(r=>r.slice()),voices:o.voices.slice(),lv:(Array.isArray(o.lv)?o.lv:dmLvNew()).slice(),vol:o.vol??1});
+const dmLvGain=x=>x*x;   /* v0.31c levels: 0-150% on the fader, squared so the travel feels even to the ear */
+const dm={grid:dmGridNew(),voices:DM_DEF_VOICES.slice(),lv:dmLvNew(),vol:1,page:0,follow:true,autoBpm:true};
 try{const p=JSON.parse(localStorage.getItem('lume-dm-prefs')||'null');if(p){dm.follow=p.follow!==false;dm.autoBpm=p.autoBpm!==false}}catch(e){}
 function dmPrefsSave(){try{localStorage.setItem('lume-dm-prefs',JSON.stringify({follow:dm.follow,autoBpm:dm.autoBpm}))}catch(e){}}
 const seq={rec:false,playing:false,step:-1,timer:null,base:0,due:0,name:null,beatOn:true,beatName:null,owned:null,skip:null};
@@ -3987,6 +4006,7 @@ function drumVoice(v,vel){
   vel=vel==null?1:vel;
   midiDrumV(v,vel);
   if(!AC||!percBus||!noiseBuf)return;
+  if(percBus._vol!==dm.vol){percBus._vol=dm.vol;percBus.gain.setTargetAtTime(0.8*dmLvGain(dm.vol),AC.currentTime,0.02)}   /* DRUMS master level */
   const t=AC.currentTime;
   const env=(g,peak,dur)=>{g.gain.setValueAtTime(peak,t);g.gain.exponentialRampToValueAtTime(.001,t+dur)};
   const noise=(type,freq,q,peak,dur)=>{const s=AC.createBufferSource();s.buffer=noiseBuf;const f=AC.createBiquadFilter();f.type=type;f.frequency.value=freq;if(q)f.Q.value=q;
@@ -4019,7 +4039,7 @@ function percAt(i){
   if(!seq.beatOn)return 0;let n=0;
   for(let r=0;r<DM_TRACKS;r++){const s=dm.grid[r][i];if(!s)continue;n++;
     if(seq.skip&&seq.skip.r===r&&seq.skip.i===i){seq.skip=null;continue}   /* recorded live just before this step: it already sounded */
-    const v=dm.voices[r],g=(s>=2?1:VEL_GHOST)*humanVelMul(),hd=humanDelayMs();
+    const v=dm.voices[r],g=(s>=2?1:VEL_GHOST)*dmLvGain(dm.lv[r])*humanVelMul(),hd=humanDelayMs();
     if(hd>0.5)setTimeout(()=>drumVoice(v,g),hd);else drumVoice(v,g)}
   return n}
 function renderSeq(){dmRender()}
@@ -4159,7 +4179,9 @@ function dmSanitize(o){
   for(let r=0;r<DM_TRACKS;r++){const src=o.grid[r];if(!Array.isArray(src))continue;
     for(let i=0;i<SEQ_LEN;i++){const v=src[i]|0;grid[r][i]=v>=2?2:v>0?1:0}}
   const voices=DM_DEF_VOICES.map((d,r)=>o.voices&&DV[o.voices[r]]?o.voices[r]:d);
-  return{grid,voices}}
+  const cl=x=>{x=+x;return isFinite(x)?Math.max(0,Math.min(1.5,x)):1};
+  const lv=[0,1,2,3].map(r=>Array.isArray(o.lv)?cl(o.lv[r]):1);
+  return{grid,voices,lv,vol:o.vol==null?1:cl(o.vol)}}
 /* v0.30 and older kept four 16-step on/off lanes (K S H R) with accents fixed by position.
    Carry them over: kick on 1 and 3 accented, the rest ghosted (as they used to sound); the hat
    that used to open on the "and" of 2 and 4 goes to O-HAT; a rim lane takes over track 4. Bar 2 = bar 1. */
@@ -4175,7 +4197,7 @@ function slotSnapshot(i){const s=slots[i];s.dm=dmCopy(dm);
   s.bpm=seqBpm;s.sw=seqSwing;s.human=seqHumanize;s.sound=soundSnapshot();
   if(i===activeSlot&&curName())s.name=curName();else if(!s.name||s.name==='live')s.name=SLOTN[i];}
 function slotApply(i,live){const s=slots[i];
-  const c=dmCopy(s.dm);dm.grid=c.grid;dm.voices=c.voices;
+  const c=dmCopy(s.dm);dm.grid=c.grid;dm.voices=c.voices;dm.lv=c.lv;dm.vol=c.vol;
   if(live&&TEMPO_GLIDE&&seq.playing&&s.bpm!==seqBpm)bpmGlide={from:seqBpm,to:s.bpm,n:0};else{seqBpm=s.bpm;bpmGlide=null}
   seqSwing=s.sw;seqHumanize=s.human??0.2;seq.owned=null;
   if(s.sound)applySoundSnapshot(s.sound,live);
@@ -6059,10 +6081,11 @@ function attachKnobControl(el,{set,label,def,px=150}){
   let last=0,winPk=0,winAt=0,dbTxt='',ledCls='',hotUntil=0,warnUntil=0,pinnedSince=0;
   const pos=a=>a<1e-5?0:Math.max(0,Math.min(1,(20*Math.log10(a)+40)/40));   /* -40 dB .. 0 dB across the bar */
   led.addEventListener('click',()=>{hold[0]=hold[1]=0;winPk=0;hotUntil=warnUntil=0});
-  function frame(now){
-    requestAnimationFrame(frame);
+  function frame(now,fromDm){
+    if(!fromDm)requestAnimationFrame(frame);
     if(document.hidden||!vuAnL)return;
-    const mode=(typeof DM!=='undefined'&&DM.getMode)?DM.getMode():'full',iv=mode==='full'?33:mode==='light'?66:100;
+    if(!fromDm&&now-(window.__dmDrawTs||-1e9)<150)return;   /* the display is animating: it drives the meters (v0.31b) */
+    const mode=(typeof DM!=='undefined'&&DM.getMode)?DM.getMode():'full',iv=(mode==='full'?33:mode==='light'?66:100)-(fromDm?8:0);
     if(now-last<iv)return;const dt=Math.min(.25,(now-last)/1000);last=now;
     let framePk=0,bad=false;
     [vuAnL,vuAnR].forEach((an,i)=>{
@@ -6088,6 +6111,7 @@ function attachKnobControl(el,{set,label,def,px=150}){
     const cls=now<hotUntil?'hot':now<warnUntil?'warn':'';
     if(cls!==ledCls){ledCls=cls;led.classList.toggle('hot',cls==='hot');led.classList.toggle('warn',cls==='warn')}
   }
+  window.__vuTick=t=>frame(t,true);
   requestAnimationFrame(frame);
 })();
 
@@ -6660,7 +6684,8 @@ deckInit();
    Drag = paint along the row you started on (starting on a lit pad erases; after a long-press
    it paints ghosts). Tap a track name = hear it (and record it while REC + PLAY).
    Long-press a track name = swap its sound. Right-click / Shift-click also make ghosts on desktop. */
-let dmEl=null,dmCells=[],dmLabs=[],dmPhCol=-2;
+let dmEl=null,dmCells=[],dmLabs=[],dmPhCol=-2,dmPh=null,dmColX=null,dmPhRaf=0;
+addEventListener('resize',()=>{dmColX=null;dmPhCol=-2});
 const DM_LP_MS=420;
 function dmBuild(){
   dmEl=$('dmx');if(!dmEl)return;
@@ -6678,9 +6703,10 @@ function dmBuild(){
   </div>
   <div class="dm-ctl2">
     <button type="button" class="dmb" id="dmFollow"><i></i>FOLLOW</button>
-    <button type="button" class="dmb" id="dmCopy">CPY<small>1 → 2</small></button>
+    <button type="button" class="dmb" id="dmCopy">CPY 1→2</button>
+    <button type="button" class="dmb" id="dmMixBtn"><i></i>MIX</button>
   </div>
-  <div class="dm-labs">${[0,1,2,3].map(r=>`<button type="button" class="dm-lab" data-r="${r}"><b></b><span>▾</span></button>`).join('')}</div>
+  <div class="dm-labs">${[0,1,2,3].map(r=>`<button type="button" class="dm-lab" data-r="${r}"><em></em><s></s><b></b><span>▾</span></button>`).join('')}</div>
   <div class="dm-grid" id="dmGrid" style="grid-template-columns:${cols.trim()}"></div>`;
   const g=$('dmGrid');dmCells=[];
   for(let b=1;b<4;b++){const d=document.createElement('i');d.className='dm-div';d.style.gridColumn=String(b*5);d.style.gridRow='1 / 5';g.appendChild(d)}
@@ -6688,6 +6714,11 @@ function dmBuild(){
     for(let c=0;c<16;c++){const e=document.createElement('i');e.className='dm-c'+((c>>2)%2?' alt':'');
       e.style.gridRow=String(r+1);e.style.gridColumn=String(c+1+(c>>2));g.appendChild(e);row.push(e)}
     dmCells.push(row)}
+  dmPh=document.createElement('i');dmPh.className='dm-ph';g.appendChild(dmPh);
+  const mx=document.createElement('div');mx.className='dm-mix';mx.id='dmMix';
+  mx.innerHTML=[0,1,2,3].map(r=>`<div class="mx-f" data-f="${r}"><i></i><u></u><b></b></div>`).join('')+'<div class="mx-f mx-m" data-f="m"><i></i><u></u><b></b></div>';
+  g.appendChild(mx);mx.addEventListener('pointerdown',dmMixDown);
+  $('dmMixBtn').onclick=()=>{dmMixOn=!dmMixOn;dmRender()};
   dmLabs=[...dmEl.querySelectorAll('.dm-lab')];
   g.addEventListener('pointerdown',dmGridDown);
   g.addEventListener('contextmenu',e=>e.preventDefault());
@@ -6698,6 +6729,23 @@ function dmBuild(){
   $('dmPreset').onclick=e=>{e.stopPropagation();dmPresetToggle()};
   const sw=$('dmSwing');sw.oninput=()=>{seqSwing=+sw.value/200;syncSwingUI();lcd();saveSoon()};
   dmRender()}
+/* MIX: the grid turns into four row faders and a DRUMS master. Drag (or tap) to set; 0-150%,
+   with a notch that catches 100%. Levels are saved with the slot; presets leave them alone. */
+let dmMixOn=false;
+function dmMixSync(){const m=$('dmMix');if(!m)return;
+  m.querySelectorAll('.mx-f').forEach(f=>{const k=f.dataset.f,v=k==='m'?dm.vol:dm.lv[+k],nm=k==='m'?'DRUMS':(DV[dm.voices[+k]]||DV.kick)[0];
+    f.firstChild.style.transform=(k==='m'?'scaleY(':'scaleX(')+(v/1.5)+')';const t=nm+' '+Math.round(v*100)+'%',b=f.querySelector('b');if(b.textContent!==t)b.textContent=t})}
+function dmMixDown(ev){
+  const f=ev.target.closest('.mx-f');if(!f)return;ev.preventDefault();ev.stopPropagation();
+  initAudio();if(AC.state==='suspended')AC.resume();
+  const k=f.dataset.f,m=k==='m',set=e=>{const q=f.getBoundingClientRect();let v=m?(q.bottom-e.clientY)/q.height:(e.clientX-q.left)/q.width;
+    v=Math.max(0,Math.min(1.5,v*1.5));if(Math.abs(v-1)<0.05)v=1;v=Math.round(v*100)/100;
+    if(m)dm.vol=v;else{dm.lv[+k]=v;dmLabSync(+k)}dmMixSync()};
+  set(ev);try{f.setPointerCapture(ev.pointerId)}catch(e){}
+  const mv=e=>{if(e.pointerId===ev.pointerId)set(e)};
+  const up=e=>{if(e.pointerId!==ev.pointerId)return;f.removeEventListener('pointermove',mv);f.removeEventListener('pointerup',up);f.removeEventListener('pointercancel',up);
+    if(!m&&!seq.playing)drumVoice(dm.voices[+k],dmLvGain(dm.lv[+k]));saveSoon()};
+  f.addEventListener('pointermove',mv);f.addEventListener('pointerup',up);f.addEventListener('pointercancel',up)}
 function dmFlash(el){if(!el)return;el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
 function dmBar(p){dm.page=p;
   if(seq.playing&&dm.follow&&seq.step>=0&&(seq.step>>4)!==p){dm.follow=false;dmPrefsSave()}   /* picking a bar while it follows: stay where you looked */
@@ -6709,29 +6757,34 @@ function dmRender(){
   const off=dm.page*16;
   for(let r=0;r<DM_TRACKS;r++)for(let c=0;c<16;c++){const v=dm.grid[r][off+c],e=dmCells[r][c];
     if(e._v!==v){e._v=v;e.classList.toggle('v1',v===1);e.classList.toggle('v2',v===2)}}
-  dmLabs.forEach((l,r)=>{const t=(DV[dm.voices[r]]||DV.kick)[0],b=l.querySelector('b');if(b.textContent!==t)b.textContent=t});
+  dmLabs.forEach((l,r)=>dmLabSync(r));
   $('dmBar0').classList.toggle('on',dm.page===0);$('dmBar1').classList.toggle('on',dm.page===1);
   $('dmBar1').classList.toggle('has',dm.grid.some(r=>r.slice(16).some(Boolean)));
   $('dmFollow').classList.toggle('on',dm.follow);
+  $('dmMixBtn').classList.toggle('on',dmMixOn);$('dmMix').classList.toggle('open',dmMixOn);if(dmMixOn)dmMixSync();
   const pn=$('dmPreName'),nm=seq.beatName||'—';if(pn.textContent!==nm)pn.textContent=nm;
   const clr=$('dmClr');clr.textContent=dmUndoGrid?'UNDO':'CLR';clr.classList.toggle('undo',!!dmUndoGrid);
   dmEl.querySelectorAll('[data-action=rec]').forEach(b=>b.classList.toggle('on',seq.rec));
   dmEl.querySelectorAll('[data-action=play]').forEach(b=>b.classList.toggle('on',seq.playing));
   syncSwingUI();
-  dmCells.forEach(row=>row.forEach(e=>e.classList.remove('ph')));dmPhCol=-1;dmPlayhead()}
-function dmPlayhead(){
+  dmPhCol=-2;dmPlayheadNow()}
+function dmPlayhead(){if(!dmPhRaf)dmPhRaf=requestAnimationFrame(()=>{dmPhRaf=0;dmPlayheadNow()})}   /* visuals wait for the next frame; the step timer only plays sound */
+function dmLabFlash(r){const e=dmLabs[r]&&dmLabs[r].firstChild;if(e&&e.animate)e.animate([{opacity:1},{opacity:0}],{duration:170,easing:'ease-out'})}
+function dmPlayheadNow(){
   if(!dmEl)return;
   const st=seq.playing?seq.step:-1;
   if(dm.follow&&st>=0&&(st>>4)!==dm.page){dm.page=st>>4;dmRender();return}
   const col=st>=0&&(st>>4)===dm.page?st%16:-1;
   if(col!==dmPhCol){
-    for(let r=0;r<DM_TRACKS;r++){if(dmPhCol>=0)dmCells[r][dmPhCol].classList.remove('ph');if(col>=0)dmCells[r][col].classList.add('ph')}
+    if(col>=0){if(!dmColX){const x0=dmCells[0][0].offsetLeft;dmColX=dmCells[0].map(e=>e.offsetLeft-x0)}
+      dmPh.style.transform='translateX('+dmColX[col]+'px)';dmPh.style.opacity=1}
+    else dmPh.style.opacity=0;
     dmPhCol=col}
-  if(st>=0&&seq.beatOn)for(let r=0;r<DM_TRACKS;r++)if(dm.grid[r][st])dmFlash(dmLabs[r])}
+  if(st>=0&&seq.beatOn)for(let r=0;r<DM_TRACKS;r++)if(dm.grid[r][st])dmLabFlash(r)}
 function dmSetCell(r,i,v,audition){
   if(dm.grid[r][i]===v)return;dm.grid[r][i]=v;
   const c=i-dm.page*16;if(c>=0&&c<16){const e=dmCells[r][c];e._v=v;e.classList.toggle('v1',v===1);e.classList.toggle('v2',v===2)}
-  if(v&&audition)drumVoice(dm.voices[r],v>=2?1:VEL_GHOST);
+  if(v&&audition)drumVoice(dm.voices[r],(v>=2?1:VEL_GHOST)*dmLvGain(dm.lv[r]));
   if(i>=16)$('dmBar1').classList.toggle('has',dm.grid.some(rw=>rw.slice(16).some(Boolean)))}
 /* hit-testing works from the pointer position, not the element under it, so the gaps between
    pads count too: a finger that lands between two rows still picks the nearer one */
@@ -6758,12 +6811,23 @@ function dmLabDown(ev){
   ev.preventDefault();ev.stopPropagation();
   initAudio();if(AC.state==='suspended')AC.resume();
   const l=ev.currentTarget,r=+l.dataset.r;if(ev.button===2)return;
-  drumVoice(dm.voices[r],1);dmFlash(l);dmRecordHit(r);
-  const lp=setTimeout(()=>{dmVoiceCycle(r)},DM_LP_MS);
-  const up=()=>{clearTimeout(lp);l.removeEventListener('pointerup',up);l.removeEventListener('pointercancel',up);l.removeEventListener('pointerleave',up)};
-  l.addEventListener('pointerup',up);l.addEventListener('pointercancel',up);l.addEventListener('pointerleave',up)}
+  drumVoice(dm.voices[r],dmLvGain(dm.lv[r]));dmLabFlash(r);dmRecordHit(r);
+  /* v0.31c: slide sideways on a row name to set that row's level (the bar along its bottom) */
+  const x0=ev.clientX,lv0=dm.lv[r],w=l.getBoundingClientRect().width;let sliding=false;
+  const lp=setTimeout(()=>{if(!sliding)dmVoiceCycle(r)},DM_LP_MS);
+  try{l.setPointerCapture(ev.pointerId)}catch(e){}
+  const mv=e=>{if(e.pointerId!==ev.pointerId)return;const dx=e.clientX-x0;
+    if(!sliding&&Math.abs(dx)>6){sliding=true;clearTimeout(lp);l.classList.add('lvl')}
+    if(!sliding)return;let v=Math.max(0,Math.min(1.5,lv0+dx/w*1.5));if(Math.abs(v-1)<0.05)v=1;dm.lv[r]=Math.round(v*100)/100;dmLabSync(r)};
+  const up=e=>{if(e.pointerId!==ev.pointerId)return;clearTimeout(lp);
+    l.removeEventListener('pointermove',mv);l.removeEventListener('pointerup',up);l.removeEventListener('pointercancel',up);
+    if(sliding){l.classList.remove('lvl');dmLabSync(r);if(!seq.playing)drumVoice(dm.voices[r],dmLvGain(dm.lv[r]));saveSoon()}};
+  l.addEventListener('pointermove',mv);l.addEventListener('pointerup',up);l.addEventListener('pointercancel',up)}
+function dmLabSync(r){const l=dmLabs[r];if(!l)return;const s=l.querySelector('s');if(s)s.style.transform='scaleX('+(dm.lv[r]/1.5)+')';
+  const b=l.querySelector('b'),t=l.classList.contains('lvl')?Math.round(dm.lv[r]*100)+'%':(DV[dm.voices[r]]||DV.kick)[0];if(b.textContent!==t)b.textContent=t;
+  if(dmMixOn)dmMixSync()}
 function dmVoiceCycle(r){const k=DV_ORDER.indexOf(dm.voices[r]);dm.voices[r]=DV_ORDER[(k+1)%DV_ORDER.length];
-  drumVoice(dm.voices[r],1);dmFlash(dmLabs[r]);dmRender();saveSoon()}
+  drumVoice(dm.voices[r],dmLvGain(dm.lv[r]));dmLabFlash(r);dmRender();saveSoon()}
 /* PRESET pop-up: the beat library, plus the AUTO BPM switch */
 function dmPresetToggle(){const p=$('dmPresetPop');if(p&&p.classList.contains('open'))dmPresetClose();else dmPresetOpen()}
 function dmPresetOpen(){let p=$('dmPresetPop');
